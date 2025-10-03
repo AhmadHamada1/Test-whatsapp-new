@@ -1,17 +1,20 @@
 # Use an official Node.js runtime as the base image
 FROM node:20-alpine
 
-# Set the working directory in the container
-WORKDIR app
-# Copy package.json and package-lock.json first to leverage Docker cache
+# Set working directory inside container
+WORKDIR /app
+
+# Copy package.json and package-lock.json first
 COPY package*.json ./
-# Install PM2 globally and other dependencies
+
+# Install all dependencies (make sure dotenv is in "dependencies")
 RUN npm install
 
-# Copy the source code into the container
+# Copy source code into container
 COPY . .
-# Run the build script (compile TypeScript files)
-# Expose the application port (e.g., 6000)
+
+# Expose the app port
 EXPOSE 6662
-# Start the application using the start:build script
+
+# Start the app
 CMD ["npm", "start"]
