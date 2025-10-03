@@ -5,7 +5,7 @@ services:
     build: .
     container_name: whatsapp-webjs-wrapper-bot-server
     ports:
-      - '6662:6662'
+      - '6662:4000'
     restart: unless-stopped
     volumes:
       - .:/app
