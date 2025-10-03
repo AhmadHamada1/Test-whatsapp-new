@@ -105,6 +105,26 @@ router.post("/:id/revoke", requireAdminJwt, controller.revoke);
  */
 router.post("/:id/activate", requireAdminJwt, controller.activate);
 
+/**
+ * @openapi
+ * /api-keys/{id}:
+ *   delete:
+ *     summary: Delete API key
+ *     tags: [API Keys]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Deleted
+ */
+router.delete("/:id", requireAdminJwt, controller.remove);
+
 module.exports = router;
 
 
