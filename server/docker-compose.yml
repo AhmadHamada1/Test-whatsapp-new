@@ -2,6 +2,7 @@ version: "3.9"
 
 services:
   server:
+    container_name: whatsapp-webjs-wrapper-bot-server
     build:
       context: .
       dockerfile: Dockerfile
