@@ -1,9 +1,12 @@
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { ApiKeysTab } from "@/components/dashboard/api-keys-tab"
+import { getMe } from "@/lib/services/auth"
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const me = await getMe()
+  const email = me?.admin?.email
   return (
-    <DashboardLayout>
+    <DashboardLayout userEmail={email}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-semibold text-balance">Dashboard</h1>

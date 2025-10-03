@@ -1,17 +1,25 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useEffect, type ReactNode } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { logout } from "@/lib/services/auth"
+import { useAuth } from "@/hooks/use-auth"
 
 interface DashboardLayoutProps {
   children: ReactNode
+  userEmail?: string
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children, userEmail }: DashboardLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const { user } = useAuth()
+  const email = userEmail || user?.email || ""
+
+  useEffect(() => {
+    console.log("---- user -----", user)
+  }, [user])
 
   const handleLogout = async () => {
     try {
@@ -87,11 +95,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="p-4 border-t border-border">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-sm font-medium text-primary">JD</span>
+                <span className="text-sm font-medium text-primary">{email ? email.slice(0, 2).toUpperCase() : "??"}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">John Doe</p>
-                <p className="text-xs text-muted-foreground truncate">john@example.com</p>
+                <p className="text-sm font-medium truncate">{email ? email.split("@")[0] : "?"}</p>
+                <p className="text-xs text-muted-foreground truncate">{email || "?"}</p>
               </div>
             </div>
             <Button variant="outline" size="sm" className="w-full bg-transparent" onClick={handleLogout}>
@@ -122,9 +130,8 @@ function NavItem({ href, icon, label, active }: NavItemProps) {
   return (
     <button
       onClick={() => router.push(href)}
-      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-        active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-      }`}
+      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+        }`}
     >
       {icon}
       <span className="font-medium">{label}</span>
