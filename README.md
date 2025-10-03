@@ -6,3 +6,6 @@ This project is about creating a platform where you can create the whatsapp bots
 
 Node.js
 Next.js
+
+## Release 
+Version 0.1 - In Development
