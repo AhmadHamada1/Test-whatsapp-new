@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies (make sure dotenv is in "dependencies")
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy source code into container
 COPY . .
