@@ -1,20 +1,18 @@
-# Use an official Node.js runtime as the base image
-FROM node:20-alpine
+# syntax=docker/dockerfile:1
 
-# Set working directory inside container
+FROM node:20-alpine AS base
 WORKDIR /app
 
-# Copy package.json and package-lock.json first
+ENV NODE_ENV=production
+# Skip Chromium download for puppeteer during install (whatsapp-web.js)
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
 COPY package*.json ./
+RUN npm ci --omit=dev
 
-# Install all dependencies (make sure dotenv is in "dependencies")
-RUN npm install --legacy-peer-deps
+COPY src ./src
+COPY ./*.js ./
 
-# Copy source code into container
-COPY . .
+EXPOSE 4000
 
-# Expose the app port
-EXPOSE 6662
-
-# Start the app
-CMD ["npm", "start"]
+CMD ["node", "src/index.js"]
