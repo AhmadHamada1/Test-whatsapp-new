@@ -18,16 +18,16 @@ import { Label } from "@/components/ui/label"
 interface CreateApiKeyDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onCreateKey: (name: string) => void
+  onCreateKey: (name: string) => Promise<void> | void
 }
 
 export function CreateApiKeyDialog({ open, onOpenChange, onCreateKey }: CreateApiKeyDialogProps) {
   const [name, setName] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (name.trim()) {
-      onCreateKey(name.trim())
+      await onCreateKey(name.trim())
       setName("")
       onOpenChange(false)
     }

@@ -6,7 +6,8 @@ const { generateToken, sha256 } = require("../../core/utils/crypto");
 async function createKey(label, adminId) {
   const token = generateToken(32);
   const tokenHash = sha256(token);
-  const apiKey = await ApiKey.create({ label, tokenHash, createdBy: adminId });
+  const tokenPrefix = token.slice(0, 6);
+  const apiKey = await ApiKey.create({ label, tokenHash, tokenPrefix, createdBy: adminId });
   return { token, apiKey };
 }
 
@@ -40,6 +41,12 @@ async function activateKey(id) {
   return key;
 }
 
-module.exports = { createKey, listKeys, getKey, revokeKey, activateKey };
+async function deleteKey(id) {
+  const key = await getKey(id);
+  await key.deleteOne();
+  return { ok: true };
+}
+
+module.exports = { createKey, listKeys, getKey, revokeKey, activateKey, deleteKey };
 
 

@@ -1,6 +1,6 @@
 "use strict";
 
-const { createKey, listKeys, getKey, revokeKey, activateKey } = require("./service");
+const { createKey, listKeys, getKey, revokeKey, activateKey, deleteKey } = require("./service");
 
 async function create(req, res, next) {
   try {
@@ -48,6 +48,15 @@ async function activate(req, res, next) {
   }
 }
 
-module.exports = { create, list, details, revoke, activate };
+async function remove(req, res, next) {
+  try {
+    await deleteKey(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { create, list, details, revoke, activate, remove };
 
 

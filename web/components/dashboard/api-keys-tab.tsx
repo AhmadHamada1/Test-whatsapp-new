@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { CreateApiKeyDialog } from "./create-api-key-dialog"
 import { ApiKeysList } from "./api-keys-list"
+import { createApiKey, revokeApiKey, activateApiKey, deleteApiKey, type ServerApiKey } from "@/lib/services/api-keys"
 
 export interface ApiKey {
   id: string
@@ -15,57 +16,46 @@ export interface ApiKey {
   lastUsed: string | null
 }
 
-export function ApiKeysTab() {
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([
-    {
-      id: "1",
-      name: "Production API Key",
-      key: "sk_live_51Hx...",
-      status: "active",
-      createdAt: "2025-01-15",
-      lastUsed: "2025-03-10",
-    },
-    {
-      id: "2",
-      name: "Development Key",
-      key: "sk_test_51Hx...",
-      status: "active",
-      createdAt: "2025-02-20",
-      lastUsed: "2025-03-09",
-    },
-    {
-      id: "3",
-      name: "Old Testing Key",
-      key: "sk_test_41Gw...",
-      status: "revoked",
-      createdAt: "2024-12-01",
-      lastUsed: "2025-01-05",
-    },
-  ])
+function obfuscate(prefix?: string) {
+  if (!prefix) return '••••••••••••••••'
+  return `${prefix}••••••••••••••••`
+}
+
+function mapServerKeyToUi(k: ServerApiKey): ApiKey {
+  return {
+    id: k._id,
+    name: k.label || "Untitled",
+    key: obfuscate(k.tokenPrefix),
+    status: k.status,
+    createdAt: new Date(k.createdAt).toISOString().split("T")[0],
+    lastUsed: null,
+  }
+}
+
+export function ApiKeysTab({ initialKeys = [] as ServerApiKey[] }) {
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>(initialKeys.map(mapServerKeyToUi))
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [newKeyToken, setNewKeyToken] = useState<string | null>(null)
 
-  const handleCreateKey = (name: string) => {
-    const newKey: ApiKey = {
-      id: Date.now().toString(),
-      name,
-      key: `sk_live_${Math.random().toString(36).substring(2, 15)}...`,
-      status: "active",
-      createdAt: new Date().toISOString().split("T")[0],
-      lastUsed: null,
-    }
-    setApiKeys([newKey, ...apiKeys])
+  const handleCreateKey = async (name: string) => {
+    const { token, key } = await createApiKey(name)
+    setNewKeyToken(token)
+    setApiKeys((prev) => [mapServerKeyToUi(key), ...prev])
   }
 
-  const handleRevokeKey = (id: string) => {
-    setApiKeys(apiKeys.map((key) => (key.id === id ? { ...key, status: "revoked" as const } : key)))
+  const handleRevokeKey = async (id: string) => {
+    const key = await revokeApiKey(id)
+    setApiKeys((prev) => prev.map((k) => (k.id === key._id ? { ...k, status: key.status } : k)))
   }
 
-  const handleActivateKey = (id: string) => {
-    setApiKeys(apiKeys.map((key) => (key.id === id ? { ...key, status: "active" as const } : key)))
+  const handleActivateKey = async (id: string) => {
+    const key = await activateApiKey(id)
+    setApiKeys((prev) => prev.map((k) => (k.id === key._id ? { ...k, status: key.status } : k)))
   }
 
-  const handleDeleteKey = (id: string) => {
-    setApiKeys(apiKeys.filter((key) => key.id !== id))
+  const handleDeleteKey = async (id: string) => {
+    await deleteApiKey(id)
+    setApiKeys((prev) => prev.filter((key) => key.id !== id))
   }
 
   return (
@@ -84,6 +74,12 @@ export function ApiKeysTab() {
           </Button>
         </CardHeader>
         <CardContent>
+          {newKeyToken ? (
+            <div className="mb-4 p-3 rounded-lg bg-muted">
+              <p className="text-sm mb-2">Here is your new API key token. Store it securely; you won’t be able to see it again.</p>
+              <code className="block w-full truncate px-2 py-1 rounded bg-background font-mono text-xs">{newKeyToken}</code>
+            </div>
+          ) : null}
           <ApiKeysList
             apiKeys={apiKeys}
             onRevoke={handleRevokeKey}

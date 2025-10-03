@@ -27,12 +27,6 @@ export function ApiKeysList({ apiKeys, onRevoke, onActivate, onDelete }: ApiKeys
   const endIndex = startIndex + ITEMS_PER_PAGE
   const currentApiKeys = apiKeys.slice(startIndex, endIndex)
 
-  const handleCopy = (id: string, key: string) => {
-    navigator.clipboard.writeText(key)
-    setCopiedId(id)
-    setTimeout(() => setCopiedId(null), 2000)
-  }
-
   if (apiKeys.length === 0) {
     return (
       <div className="text-center py-12">
@@ -71,36 +65,7 @@ export function ApiKeysList({ apiKeys, onRevoke, onActivate, onDelete }: ApiKeys
               <TableRow key={apiKey.id} className="border-border">
                 <TableCell className="font-medium">{apiKey.name}</TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <code className="px-2 py-1 rounded bg-muted font-mono text-xs">{apiKey.key}</code>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2"
-                      onClick={() => handleCopy(apiKey.id, apiKey.key)}
-                    >
-                      {copiedId === apiKey.id ? (
-                        <>
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            />
-                          </svg>
-                          Copy
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  <code className="px-2 py-1 rounded bg-muted font-mono text-xs">{apiKey.key}</code>
                 </TableCell>
                 <TableCell>
                   <Badge
@@ -168,10 +133,7 @@ export function ApiKeysList({ apiKeys, onRevoke, onActivate, onDelete }: ApiKeys
                             Activate
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem
-                          onClick={() => onDelete(apiKey.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
+                        <DropdownMenuItem onClick={() => onDelete(apiKey.id)} className="text-destructive focus:text-destructive">
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                               strokeLinecap="round"

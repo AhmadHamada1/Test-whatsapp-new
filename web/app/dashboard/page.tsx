@@ -1,10 +1,12 @@
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { ApiKeysTab } from "@/components/dashboard/api-keys-tab"
 import { getMe } from "@/lib/services/auth"
+import { listApiKeys } from "@/lib/services/api-keys"
 
 export default async function DashboardPage() {
   const me = await getMe()
   const email = me?.admin?.email
+  const keys = await listApiKeys()
   return (
     <DashboardLayout userEmail={email}>
       <div className="space-y-6">
@@ -12,7 +14,7 @@ export default async function DashboardPage() {
           <h1 className="text-3xl font-semibold text-balance">Dashboard</h1>
           <p className="text-muted-foreground mt-2 text-balance">Manage your API keys and access credentials</p>
         </div>
-        <ApiKeysTab />
+        <ApiKeysTab initialKeys={keys} />
       </div>
     </DashboardLayout>
   )
