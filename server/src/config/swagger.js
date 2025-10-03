@@ -8,7 +8,10 @@ const swaggerDefinition = {
     title: "Whatsapp Wrapper API",
     version: "1.0.0",
   },
-  servers: [{ url: "http://localhost:4000" }],
+  servers: [
+    { url: "http://localhost:4000" },
+    { url: "https://whatsapp-webjs-wrapper-bot-server.chillkro.com" }
+  ],
   components: {
     securitySchemes: {
       bearerAuth: {
