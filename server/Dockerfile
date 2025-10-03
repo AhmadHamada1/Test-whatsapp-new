@@ -14,4 +14,4 @@ COPY . .
 # Expose the application port (e.g., 6000)
 EXPOSE 6662
 # Start the application using the start:build script
-CMD ["npm", "run", "dev"]
+CMD ["npm", "start"]
