@@ -8,4 +8,4 @@ Node.js
 Next.js
 
 ## Release 
-Version 0.1 - In Development
+Version 0.1 - In Development (retry)
