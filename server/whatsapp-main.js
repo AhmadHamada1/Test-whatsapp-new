@@ -13,7 +13,6 @@ client.once('ready', () => {
 client.on('qr', (qr) => {
     console.log('QR RECEIVED', qr);
     qrcode.generate(qr, { small: true });
-
 });
 
 // Start your client
@@ -30,3 +29,19 @@ client.on('message_create', message => {
         message.reply('pong (using reply)');
     }
 });
+
+// TESTING sending a message
+// - client.sendMessage("+923054767456", "Hello"); ??? does this work???
+
+// API # 1
+// - Connect a number
+// - Calling this API should return a QR code to let the 
+//   customer scan and connect the number
+
+// API # 2
+// - Send a message as text, image and document. 
+// - There should be an indicator delay, based on how much time it 
+//   takes to write the message, and then it will send that. 
+
+// API # 3
+// Number warmup
