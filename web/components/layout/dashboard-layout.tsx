@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { logout } from "@/lib/services/auth"
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -12,8 +13,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
 
-  const handleLogout = () => {
-    router.push("/login")
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } finally {
+      router.push("/login")
+    }
   }
 
   return (
