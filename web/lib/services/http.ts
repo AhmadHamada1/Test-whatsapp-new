@@ -21,6 +21,7 @@ export async function createServerHttp() {
       config.headers = config.headers || {}
       config.headers['Authorization'] = `Bearer ${token}`
     }
+    
     return config
   })
 

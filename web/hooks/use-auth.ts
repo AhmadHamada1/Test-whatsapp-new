@@ -17,6 +17,7 @@ export function useAuth(): UseAuthResult {
     (async () => {
       try {
         const res = await getMe()
+        console.log("---- res -----", res)
         if (!canceled) {
           setUser(res.admin)
           setIsAuthenticated(true)

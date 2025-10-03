@@ -59,7 +59,8 @@ export async function getMe(): Promise<{ admin: { id: string; email: string } } 
   try {
     const { data } = await http.get<{ admin: { id: string; email: string } }>(`/auth/me`)
     return data
-  } catch {
+  } catch (e: any) {
+    console.log("---- getMe error:", e)
     return null
   }
 }
