@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   whatsapp-webjs-wrapper-bot-server:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: whatsapp-webjs-wrapper-bot-server
     ports:
       - '6662:4000'
