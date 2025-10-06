@@ -90,17 +90,61 @@ function assertReady(apiKeyId) {
   }
 }
 
-async function sendTextMessage(apiKeyId, to, text) {
+async function getClientForConnection(apiKeyId, connectionCode) {
+  if (!connectionCode) {
+    // If no connection code provided, use the default behavior
+    assertReady(apiKeyId);
+    return clientsByApiKey.get(apiKeyId);
+  }
+
+  // Find the specific connection by ID
+  const connection = await WaConnection.findOne({ 
+    _id: connectionCode, 
+    apiKey: apiKeyId 
+  });
+  
+  if (!connection) {
+    const err = new Error("Connection not found or not associated with this API key");
+    err.status = 404;
+    throw err;
+  }
+
+  if (connection.status !== 'ready') {
+    const err = new Error("Connection is not ready. Status: " + connection.status);
+    err.status = 400;
+    throw err;
+  }
+
+  // For now, we'll use the same client mapping logic
+  // In a more complex system, you might want to store client references per connection
   assertReady(apiKeyId);
-  const client = clientsByApiKey.get(apiKeyId);
+  return clientsByApiKey.get(apiKeyId);
+}
+
+async function listConnections(apiKeyId) {
+  const connections = await WaConnection.find({ apiKey: apiKeyId })
+    .select('status lastQrAt readyAt disconnectedAt createdAt')
+    .sort({ createdAt: -1 });
+  
+  return connections.map(conn => ({
+    id: conn._id,
+    status: conn.status,
+    lastQrAt: conn.lastQrAt,
+    readyAt: conn.readyAt,
+    disconnectedAt: conn.disconnectedAt,
+    createdAt: conn.createdAt
+  }));
+}
+
+async function sendTextMessage(apiKeyId, to, text, connectionCode) {
+  const client = getClientForConnection(apiKeyId, connectionCode);
   const chatId = normalizeRecipient(to);
   const result = await client.sendMessage(chatId, text);
   return { id: result.id.id, timestamp: result.timestamp };
 }
 
-async function sendMediaMessage(apiKeyId, to, mediaInput) {
-  assertReady(apiKeyId);
-  const client = clientsByApiKey.get(apiKeyId);
+async function sendMediaMessage(apiKeyId, to, mediaInput, connectionCode) {
+  const client = getClientForConnection(apiKeyId, connectionCode);
   const { mimetype, filename, dataBase64 } = mediaInput;
   const chatId = normalizeRecipient(to);
   const media = new MessageMedia(mimetype, dataBase64, filename);
@@ -108,10 +152,66 @@ async function sendMediaMessage(apiKeyId, to, mediaInput) {
   return { id: result.id.id, timestamp: result.timestamp };
 }
 
+async function disconnectNumber(apiKeyId) {
+  try {
+    // Check if there's an active connection
+    const connection = await WaConnection.findOne({ 
+      apiKey: apiKeyId,
+      status: { $in: ["ready", "pending"] }
+    });
+
+    if (!connection) {
+      const err = new Error("No active connection found for this API key");
+      err.status = 404;
+      throw err;
+    }
+
+    // Get the client and disconnect it
+    if (clientsByApiKey.has(apiKeyId)) {
+      const client = clientsByApiKey.get(apiKeyId);
+      
+      // Destroy the client
+      await client.destroy();
+      
+      // Remove from memory stores
+      clientsByApiKey.delete(apiKeyId);
+      readyByApiKey.delete(apiKeyId);
+      qrResolversByApiKey.delete(apiKeyId);
+    }
+
+    // Update connection status in database
+    await WaConnection.findOneAndUpdate(
+      { apiKey: apiKeyId, status: { $in: ["ready", "pending"] } },
+      { 
+        status: "disconnected",
+        disconnectedAt: new Date()
+      }
+    );
+
+    return { 
+      success: true, 
+      message: "WhatsApp connection disconnected successfully",
+      disconnectedAt: new Date()
+    };
+  } catch (error) {
+    // If it's already our custom error, re-throw it
+    if (error.status) {
+      throw error;
+    }
+    
+    // For other errors, wrap them
+    const err = new Error("Failed to disconnect WhatsApp: " + error.message);
+    err.status = 500;
+    throw err;
+  }
+}
+
 module.exports = {
   addNumber,
+  listConnections,
   sendTextMessage,
   sendMediaMessage,
+  disconnectNumber,
 };
 
 

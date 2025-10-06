@@ -19,5 +19,3 @@ WaConnectionSchema.index({ apiKey: 1 }, { unique: true });
 const WaConnection = mongoose.models.WaConnection || mongoose.model("WaConnection", WaConnectionSchema);
 
 module.exports = { WaConnection };
-
-
