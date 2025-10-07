@@ -422,10 +422,10 @@ router.get("/admin/connections/:apiKeyId", requireAdminJwt, listConnectionsAdmin
  *                   dataBase64:
  *                     type: string
  *                 description: Media message content
- *               connectionCode:
+ *               connectionId:
  *                 type: string
- *                 description: Optional connection ID to use for sending (if not provided, uses default connection)
- *             required: [to]
+ *                 description: Connection ID to use for sending the message
+ *             required: [to, connectionId]
  *     responses:
  *       200:
  *         description: Message sent

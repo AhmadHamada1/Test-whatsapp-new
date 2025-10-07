@@ -115,6 +115,81 @@ async function updateConnection(connectionId, update) {
   return conn;
 }
 
+// Check if a session exists for a connection
+async function hasValidSession(connectionId) {
+  try {
+    const store = await initializeMongoStore();
+    const sessionExists = await store.sessionExists(`connection_${connectionId}`);
+    console.log(`Session exists for connection ${connectionId}: ${sessionExists}`);
+    return sessionExists;
+  } catch (error) {
+    console.error(`Error checking session for connection ${connectionId}:`, error);
+    return false;
+  }
+}
+
+// Create a fresh client with RemoteAuth for sending messages
+async function createFreshClientForSending(connectionId) {
+  console.log(`Creating fresh client for sending messages - connection: ${connectionId}`);
+  
+  // Check if session exists first
+  const sessionExists = await hasValidSession(connectionId);
+  if (!sessionExists) {
+    throw new Error(`No valid session found for connection ${connectionId}. Please scan the QR code first.`);
+  }
+  
+  // Ensure MongoDB store is initialized
+  const store = await initializeMongoStore();
+
+  const client = new Client({
+    authStrategy: new RemoteAuth({
+      store: store,
+      clientId: `connection_${connectionId}`,
+      backupSyncIntervalMs: 300000 // 5 minutes
+    }),
+    puppeteer: {
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    }
+  });
+
+  return new Promise((resolve, reject) => {
+    let resolved = false;
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        reject(new Error('Client initialization timeout'));
+      }
+    }, 30000); // 30 second timeout
+
+    client.once("ready", async () => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        console.log(`Fresh client ready for connection=${connectionId}`);
+        resolve(client);
+      }
+    });
+
+    client.on("auth_failure", (msg) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        reject(new Error(`Authentication failed: ${msg}`));
+      }
+    });
+
+    client.on("disconnected", (reason) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        reject(new Error(`Client disconnected: ${reason}`));
+      }
+    });
+
+    client.initialize();
+  });
+}
+
 async function ensureClientForConnection(connectionId) {
   if (clientsByConnectionId.has(connectionId)) return clientsByConnectionId.get(connectionId);
 
@@ -201,6 +276,14 @@ async function ensureClientForConnection(connectionId) {
       connectionStep: "disconnected",
       disconnectReason: reason
     });
+  });
+
+  // Handle page crashes and other errors
+  client.on("change_state", (state) => {
+    console.log(`WhatsApp client state changed for connection=${connectionId}:`, state);
+    if (state === 'UNPAIRED' || state === 'UNPAIRED_IDLE') {
+      readyByConnectionId.set(connectionId, false);
+    }
   });
 
   // Listen for when session is saved to MongoDB
@@ -333,33 +416,41 @@ async function addNumber(apiKeyId) {
 }
 
 function assertConnectionReady(connectionId) {
-  if (!clientsByConnectionId.has(connectionId) || !readyByConnectionId.get(connectionId)) {
-    const err = new Error("WhatsApp connection is not ready yet. Please scan the QR code first.");
+  if (!clientsByConnectionId.has(connectionId)) {
+    const err = new Error("WhatsApp connection is not initialized yet. Please scan the QR code first.");
     err.status = 400;
+    throw err;
+  }
+  
+  // For authenticated connections, we don't need to wait for the ready event
+  // The client should be able to send messages once authenticated
+  const isReady = readyByConnectionId.get(connectionId);
+  if (!isReady) {
+    console.log(`Connection ${connectionId} is authenticated but not yet marked as ready. Attempting to send message anyway.`);
+  }
+  
+  // Additional check: ensure the client is actually available and properly initialized
+  const client = clientsByConnectionId.get(connectionId);
+  if (!client) {
+    const err = new Error("WhatsApp client is not available. Please try again.");
+    err.status = 500;
+    throw err;
+  }
+  
+  // Check if the client's page object is available (indicates proper initialization)
+  if (!client.pupPage) {
+    const err = new Error("WhatsApp client is not properly initialized. The browser session may have crashed. Please try reconnecting your number.");
+    err.status = 500;
     throw err;
   }
 }
 
-async function getClientForConnection(apiKeyId, connectionCode) {
-  if (!connectionCode) {
-    // If no connection code provided, find the first ready connection for this API key
-    const connection = await WaConnection.findOne({ 
-      apiKey: apiKeyId, 
-      status: "ready" 
-    });
-    
-    if (!connection) {
-      const err = new Error("No ready connection found. Please add a number first.");
-      err.status = 404;
-      throw err;
-    }
-    
-    connectionCode = connection._id.toString();
-  }
-
+async function getClientForConnection(apiKeyId, connectionId) {
+  console.log(`Getting client for connection ${connectionId} with API key ${apiKeyId}`);
+  
   // Find the specific connection by ID
   const connection = await WaConnection.findOne({ 
-    _id: connectionCode, 
+    _id: connectionId, 
     apiKey: apiKeyId 
   });
   
@@ -368,16 +459,47 @@ async function getClientForConnection(apiKeyId, connectionCode) {
     err.status = 404;
     throw err;
   }
+  
+  console.log(`Connection found with status: ${connection.status}`);
 
-  if (connection.status !== 'ready') {
-    const err = new Error("Connection is not ready. Status: " + connection.status);
+  if (!['ready', 'authenticated'].includes(connection.status)) {
+    let errorMessage = "Connection is not ready. Status: " + connection.status;
+    if (connection.status === 'pending') {
+      errorMessage += ". Please scan the QR code first.";
+    } else if (connection.status === 'auth_failed') {
+      errorMessage += ". Authentication failed. Please try scanning the QR code again.";
+    } else if (connection.status === 'disconnected') {
+      errorMessage += ". Connection was disconnected. Please add a new number.";
+    }
+    const err = new Error(errorMessage);
     err.status = 400;
     throw err;
   }
 
+  // Ensure the client is initialized for this connection
+  if (!clientsByConnectionId.has(connectionId)) {
+    console.log(`Client not found for connection ${connectionId}, initializing...`);
+    await ensureClientForConnection(connectionId);
+    console.log(`Client initialized for connection ${connectionId}`);
+  } else {
+    console.log(`Client already exists for connection ${connectionId}`);
+    
+    // Check if the existing client is in a valid state
+    const existingClient = clientsByConnectionId.get(connectionId);
+    if (!existingClient || !existingClient.pupPage) {
+      console.log(`Existing client for connection ${connectionId} is invalid, reinitializing...`);
+      // Remove the invalid client
+      clientsByConnectionId.delete(connectionId);
+      readyByConnectionId.delete(connectionId);
+      // Reinitialize
+      await ensureClientForConnection(connectionId);
+      console.log(`Client reinitialized for connection ${connectionId}`);
+    }
+  }
+  
   // Get the client for this specific connection
-  assertConnectionReady(connectionCode);
-  return clientsByConnectionId.get(connectionCode);
+  assertConnectionReady(connectionId);
+  return clientsByConnectionId.get(connectionId);
 }
 
 async function listConnections(apiKeyId) {
@@ -404,20 +526,84 @@ async function listConnections(apiKeyId) {
   }));
 }
 
-async function sendTextMessage(apiKeyId, to, text, connectionCode) {
-  const client = await getClientForConnection(apiKeyId, connectionCode);
-  const chatId = normalizeRecipient(to);
-  const result = await client.sendMessage(chatId, text);
-  return { id: result.id.id, timestamp: result.timestamp };
+// Send message with session recreation if needed
+async function sendMessageWithSessionRecreation(apiKeyId, to, messageContent, connectionId, isMedia = false) {
+  console.log(`Attempting to send ${isMedia ? 'media' : 'text'} message to ${to} using connection ${connectionId}`);
+  
+  // First, try with existing client
+  try {
+    const client = await getClientForConnection(apiKeyId, connectionId);
+    
+    if (client && client.pupPage) {
+      console.log(`Using existing client for connection ${connectionId}`);
+      const chatId = normalizeRecipient(to);
+      
+      if (isMedia) {
+        const { mimetype, filename, dataBase64 } = messageContent;
+        const media = new MessageMedia(mimetype, dataBase64, filename);
+        const result = await client.sendMessage(chatId, media);
+        return { id: result.id.id, timestamp: result.timestamp };
+      } else {
+        const result = await client.sendMessage(chatId, messageContent);
+        return { id: result.id.id, timestamp: result.timestamp };
+      }
+    }
+  } catch (error) {
+    console.log(`Existing client failed for connection ${connectionId}:`, error.message);
+    
+    // If it's an evaluate error or client issue, try with fresh client
+    if (error.message && (error.message.includes('evaluate') || error.message.includes('not properly initialized'))) {
+      console.log(`Creating fresh client for connection ${connectionId} due to client error`);
+      
+      try {
+        const freshClient = await createFreshClientForSending(connectionId);
+        const chatId = normalizeRecipient(to);
+        
+        if (isMedia) {
+          const { mimetype, filename, dataBase64 } = messageContent;
+          const media = new MessageMedia(mimetype, dataBase64, filename);
+          const result = await freshClient.sendMessage(chatId, media);
+          
+          // Clean up the fresh client after use
+          setTimeout(() => {
+            try {
+              freshClient.destroy();
+            } catch (e) {
+              console.log('Error destroying fresh client:', e.message);
+            }
+          }, 5000);
+          
+          return { id: result.id.id, timestamp: result.timestamp };
+        } else {
+          const result = await freshClient.sendMessage(chatId, messageContent);
+          
+          // Clean up the fresh client after use
+          setTimeout(() => {
+            try {
+              freshClient.destroy();
+            } catch (e) {
+              console.log('Error destroying fresh client:', e.message);
+            }
+          }, 5000);
+          
+          return { id: result.id.id, timestamp: result.timestamp };
+        }
+      } catch (freshError) {
+        console.error(`Fresh client also failed for connection ${connectionId}:`, freshError);
+        throw new Error(`Failed to send message: ${freshError.message}`);
+      }
+    }
+    
+    throw error;
+  }
 }
 
-async function sendMediaMessage(apiKeyId, to, mediaInput, connectionCode) {
-  const client = await getClientForConnection(apiKeyId, connectionCode);
-  const { mimetype, filename, dataBase64 } = mediaInput;
-  const chatId = normalizeRecipient(to);
-  const media = new MessageMedia(mimetype, dataBase64, filename);
-  const result = await client.sendMessage(chatId, media);
-  return { id: result.id.id, timestamp: result.timestamp };
+async function sendTextMessage(apiKeyId, to, text, connectionId) {
+  return await sendMessageWithSessionRecreation(apiKeyId, to, text, connectionId, false);
+}
+
+async function sendMediaMessage(apiKeyId, to, mediaInput, connectionId) {
+  return await sendMessageWithSessionRecreation(apiKeyId, to, mediaInput, connectionId, true);
 }
 
 async function getConnectionStatus(apiKeyId, connectionId = null) {

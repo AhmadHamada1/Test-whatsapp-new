@@ -42,10 +42,10 @@ async function disconnectHandler(req, res, next) {
 
 async function sendHandler(req, res, next) {
   try {
-    const { to, text, media, connectionCode } = req.body;
+    const { to, text, media, connectionId } = req.body;
     const result = text
-      ? await sendTextMessage(req.apiKey._id, to, text, connectionCode)
-      : await sendMediaMessage(req.apiKey._id, to, media, connectionCode);
+      ? await sendTextMessage(req.apiKey._id, to, text, connectionId)
+      : await sendMediaMessage(req.apiKey._id, to, media, connectionId);
     res.json({ ok: true, data: result });
   } catch (err) {
     next(err);

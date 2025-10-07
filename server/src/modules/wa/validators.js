@@ -13,7 +13,7 @@ const sendSchema = z
         dataBase64: z.string().min(1),
       })
       .optional(),
-    connectionCode: z.string().optional(),
+    connectionId: z.string().min(1, "Connection ID is required"),
   })
   .refine((v) => Boolean(v.text) || Boolean(v.media), {
     message: "Either text or media must be provided",

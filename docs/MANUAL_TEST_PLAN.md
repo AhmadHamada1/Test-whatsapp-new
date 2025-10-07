@@ -232,19 +232,19 @@ curl -X GET http://localhost:4000/wa/status \
 - ✅ Media appears correctly on recipient's device
 - ✅ Proper file type and name are preserved
 
-### Test Case 3.3: Message Sending with Connection Code
+### Test Case 3.3: Message Sending with Connection ID
 **Objective:** Verify sending messages with specific connection
 
 **Steps:**
 1. Create multiple connections
-2. Send message specifying `connectionCode`
+2. Send message specifying `connectionId`
 3. Verify message is sent from correct WhatsApp account
-4. Send message without `connectionCode` (default connection)
+4. Send message without `connectionId` (should fail)
 
 **Expected Results:**
 - ✅ Message sent from specified connection
-- ✅ Default connection used when no code specified
-- ✅ Error when invalid connection code provided
+- ✅ Error when connectionId is not provided
+- ✅ Error when invalid connection ID provided
 
 ### Test Case 3.4: Message Validation
 **Objective:** Verify message validation and error handling
