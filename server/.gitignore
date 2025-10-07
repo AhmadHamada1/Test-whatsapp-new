@@ -1,4 +1,11 @@
-node_modules/
-.env
-.wwebjs_cache/
+# Dependencies
 package-lock.json
+node_modules/
+
+# Environment variables
+.env
+
+# WhatsApp Web.js
+.wwebjs_cache/
+.wwebjs_auth/
+.wwebjs_sessions/

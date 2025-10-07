@@ -231,39 +231,46 @@ async function captureAccountInfo(client) {
   const accountInfo = {};
   
   try {
-    // Get basic user information
-    const me = await client.getMe();
-    accountInfo.phoneNumber = me.id.user;
-    accountInfo.whatsappId = me.id._serialized;
-    accountInfo.profileName = me.pushname;
+    // Get basic user information from client.info
+    if (!client.info) {
+      throw new Error('Client info not available');
+    }
+    
+    accountInfo.phoneNumber = client.info.wid.user;
+    accountInfo.whatsappId = client.info.wid._serialized;
+    accountInfo.profileName = client.info.pushname;
     
     // Get platform information
-    if (client.info && client.info.platform) {
+    if (client.info.platform) {
       accountInfo.platform = client.info.platform;
     }
     
     // Get profile picture URL
     try {
-      const profilePicUrl = await client.getProfilePicUrl(me.id._serialized);
+      const profilePicUrl = await client.getProfilePicUrl(client.info.wid._serialized);
       accountInfo.profilePictureUrl = profilePicUrl;
     } catch (error) {
-      console.log(`Profile picture not available or private for ${me.id.user}:`, error.message);
+      console.log(`Profile picture not available or private for ${client.info.wid.user}:`, error.message);
     }
     
     // Get status message
     try {
-      const status = await client.getStatus(me.id._serialized);
+      const status = await client.getStatus(client.info.wid._serialized);
       accountInfo.statusMessage = status.status;
     } catch (error) {
-      console.log(`Status message not available or private for ${me.id.user}:`, error.message);
+      console.log(`Status message not available or private for ${client.info.wid.user}:`, error.message);
     }
     
-    console.log(`Account info captured for ${me.id.user}:`, {
+    // Set lastSeen to current time when connection is established
+    accountInfo.lastSeen = new Date();
+    
+    console.log(`Account info captured for ${client.info.wid.user}:`, {
       phoneNumber: accountInfo.phoneNumber,
       profileName: accountInfo.profileName,
       platform: accountInfo.platform,
       hasProfilePicture: !!accountInfo.profilePictureUrl,
-      hasStatusMessage: !!accountInfo.statusMessage
+      hasStatusMessage: !!accountInfo.statusMessage,
+      lastSeen: accountInfo.lastSeen
     });
     
   } catch (error) {
@@ -398,14 +405,14 @@ async function listConnections(apiKeyId) {
 }
 
 async function sendTextMessage(apiKeyId, to, text, connectionCode) {
-  const client = getClientForConnection(apiKeyId, connectionCode);
+  const client = await getClientForConnection(apiKeyId, connectionCode);
   const chatId = normalizeRecipient(to);
   const result = await client.sendMessage(chatId, text);
   return { id: result.id.id, timestamp: result.timestamp };
 }
 
 async function sendMediaMessage(apiKeyId, to, mediaInput, connectionCode) {
-  const client = getClientForConnection(apiKeyId, connectionCode);
+  const client = await getClientForConnection(apiKeyId, connectionCode);
   const { mimetype, filename, dataBase64 } = mediaInput;
   const chatId = normalizeRecipient(to);
   const media = new MessageMedia(mimetype, dataBase64, filename);

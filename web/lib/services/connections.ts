@@ -9,6 +9,15 @@ export type Connection = {
   readyAt?: string
   disconnectedAt?: string
   createdAt: string
+  accountInfo?: {
+    phoneNumber?: string
+    whatsappId?: string
+    profileName?: string
+    platform?: string
+    profilePictureUrl?: string
+    statusMessage?: string
+    lastSeen?: string
+  }
 }
 
 export async function getConnections(apiKeyId: string): Promise<Connection[]> {

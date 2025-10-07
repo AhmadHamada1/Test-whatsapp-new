@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getConnections, type Connection } from "@/lib/services/connections"
 import { formatDistanceToNow } from "date-fns"
 
@@ -55,6 +56,59 @@ export function ConnectionsDialog({ apiKeyId, apiKeyName, children }: Connection
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Never"
     return formatDistanceToNow(new Date(dateString), { addSuffix: true })
+  }
+
+  const renderAccountInfo = (connection: Connection) => {
+    if (!connection.accountInfo || connection.status !== 'ready') {
+      return (
+        <div className="text-sm text-muted-foreground">
+          {connection.status === 'pending' ? 'Scanning QR code...' : 
+           connection.status === 'disconnected' ? 'Not connected' : 'No account info'}
+        </div>
+      )
+    }
+
+    const { phoneNumber, profileName, platform, profilePictureUrl, statusMessage, lastSeen } = connection.accountInfo
+
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center space-x-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={profilePictureUrl} alt={profileName || phoneNumber} />
+            <AvatarFallback className="text-xs">
+              {(profileName || phoneNumber || 'WA').charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium text-sm truncate">
+              {profileName || phoneNumber || 'Unknown'}
+            </div>
+            <div className="text-xs text-muted-foreground truncate">
+              {phoneNumber && `+${phoneNumber}`}
+            </div>
+          </div>
+        </div>
+        
+        {platform && (
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline" className="text-xs">
+              {platform}
+            </Badge>
+            {lastSeen && (
+              <span className="text-xs text-muted-foreground">
+                Last seen {formatDate(lastSeen)}
+              </span>
+            )}
+          </div>
+        )}
+        
+        {statusMessage && (
+          <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+            "{statusMessage}"
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -116,6 +170,7 @@ export function ConnectionsDialog({ apiKeyId, apiKeyName, children }: Connection
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-border">
+                    <TableHead className="font-medium">Account Info</TableHead>
                     <TableHead className="font-medium">Status</TableHead>
                     <TableHead className="font-medium">Created</TableHead>
                     <TableHead className="font-medium">Last QR</TableHead>
@@ -126,6 +181,9 @@ export function ConnectionsDialog({ apiKeyId, apiKeyName, children }: Connection
                 <TableBody>
                   {connections.map((connection) => (
                     <TableRow key={connection.id} className="border-border">
+                      <TableCell className="py-4">
+                        {renderAccountInfo(connection)}
+                      </TableCell>
                       <TableCell>{getStatusBadge(connection.status)}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {formatDate(connection.createdAt)}
