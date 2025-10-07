@@ -1,6 +1,6 @@
 "use strict";
 
-const { addNumber, sendTextMessage, sendMediaMessage, listConnections, disconnectNumber } = require("./service");
+const { addNumber, sendTextMessage, sendMediaMessage, listConnections, disconnectNumber, getConnectionStatus, getConnectionStatusById } = require("./service");
 
 async function addNumberHandler(req, res, next) {
   try {
@@ -32,7 +32,8 @@ async function listConnectionsAdminHandler(req, res, next) {
 
 async function disconnectHandler(req, res, next) {
   try {
-    const result = await disconnectNumber(req.apiKey._id);
+    const { connectionId } = req.params;
+    const result = await disconnectNumber(req.apiKey._id, connectionId);
     res.json({ ok: true, data: result });
   } catch (err) {
     next(err);
@@ -51,6 +52,18 @@ async function sendHandler(req, res, next) {
   }
 }
 
-module.exports = { addNumberHandler, listConnectionsHandler, listConnectionsAdminHandler, disconnectHandler, sendHandler };
+async function getConnectionStatusHandler(req, res, next) {
+  try {
+    const { connectionId } = req.params;
+    const result = connectionId 
+      ? await getConnectionStatusById(req.apiKey._id, connectionId)
+      : await getConnectionStatus(req.apiKey._id);
+    res.json({ ok: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { addNumberHandler, listConnectionsHandler, listConnectionsAdminHandler, disconnectHandler, sendHandler, getConnectionStatusHandler };
 
 
