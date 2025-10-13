@@ -96,7 +96,6 @@ function createApp() {
 
   // Mount routes at both root and /api to avoid 404s when using /api prefix
   app.use(routes);
-  app.use("/api", routes);
 
   // Handle 404 requests
   app.use((req, res) => {

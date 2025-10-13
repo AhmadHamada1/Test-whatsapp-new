@@ -6,22 +6,22 @@ const WaConnectionSchema = new mongoose.Schema(
   {
     apiKey: { type: mongoose.Schema.Types.ObjectId, ref: "ApiKey", required: true },
     status: { type: String, enum: ["pending", "authenticated", "ready", "auth_failed", "disconnected"], default: "pending", index: true },
-    
+
     // QR Code related fields
     lastQr: { type: String },
     lastQrAt: { type: Date },
-    
+
     // Connection timeline
     authenticatedAt: { type: Date },
     readyAt: { type: Date },
     authFailedAt: { type: Date },
     disconnectedAt: { type: Date },
-    
+
     // Connection metadata
     connectionStep: { type: String, enum: ["not_started", "qr_generated", "authenticated", "ready", "auth_failed", "disconnected"] },
     error: { type: String },
     disconnectReason: { type: String },
-    
+
     // WhatsApp Account Information
     phoneNumber: { type: String },
     whatsappId: { type: String },

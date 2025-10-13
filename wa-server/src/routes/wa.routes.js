@@ -92,136 +92,76 @@ router.post("/add-number", requireApiKey, addNumberHandler);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 ok:
- *                   type: boolean
- *                 data:
- *                   type: object
+ *               allOf:
+ *                 - $ref: "#/components/schemas/Success"
+ *                 - type: object
  *                   properties:
- *                     success:
- *                       type: boolean
- *                     message:
- *                       type: string
- *                     connectionId:
- *                       type: string
- *                     disconnectedAt:
- *                       type: string
- *                       format: date-time
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         success:
+ *                           type: boolean
+ *                         message:
+ *                           type: string
+ *                         connectionId:
+ *                           type: string
+ *                         disconnectedAt:
+ *                           type: string
+ *                           format: date-time
+ *       401:
+ *         description: Unauthorized - Invalid API key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *       404:
  *         description: No active connection found
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 ok:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "No active connection found for this API key"
+ *               $ref: "#/components/schemas/Error"
  *       500:
  *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 ok:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Failed to disconnect WhatsApp"
+ *               $ref: "#/components/schemas/Error"
  */
 router.post("/disconnect/:connectionId", requireApiKey, disconnectHandler);
 
 /**
  * @openapi
- * /wa/status/{connectionId}:
+ * /wa/status:
  *   get:
- *     summary: Get specific WhatsApp connection status
- *     description: Check the status of a specific WhatsApp connection
+ *     summary: Get WhatsApp connection status
+ *     description: Check the status of the most recent WhatsApp connection for the API key
  *     tags: [WhatsApp]
  *     security:
  *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: connectionId
- *         required: false
- *         schema:
- *           type: string
- *         description: Connection ID to check status for (optional - if not provided, returns most recent connection)
  *     responses:
  *       200:
  *         description: Connection status retrieved successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 ok:
- *                   type: boolean
- *                 data:
- *                   type: object
+ *               allOf:
+ *                 - $ref: "#/components/schemas/Success"
+ *                 - type: object
  *                   properties:
- *                     connectionId:
- *                       type: string
- *                     status:
- *                       type: string
- *                       enum: [not_started, pending, authenticated, ready, auth_failed, disconnected]
- *                     connectionStep:
- *                       type: string
- *                       enum: [not_started, qr_generated, authenticated, ready, auth_failed, disconnected]
- *                     isReady:
- *                       type: boolean
- *                     message:
- *                       type: string
- *                     lastQrAt:
- *                       type: string
- *                       format: date-time
- *                     authenticatedAt:
- *                       type: string
- *                       format: date-time
- *                     readyAt:
- *                       type: string
- *                       format: date-time
- *                     authFailedAt:
- *                       type: string
- *                       format: date-time
- *                     disconnectedAt:
- *                       type: string
- *                       format: date-time
- *                     error:
- *                       type: string
- *                     disconnectReason:
- *                       type: string
- *                     accountInfo:
- *                       type: object
- *                       properties:
- *                         phoneNumber:
- *                           type: string
- *                           description: Connected WhatsApp phone number
- *                         whatsappId:
- *                           type: string
- *                           description: Full WhatsApp ID with country code
- *                         profileName:
- *                           type: string
- *                           description: Display name set by the user
- *                         platform:
- *                           type: string
- *                           description: Device platform (Android/iOS)
- *                         profilePictureUrl:
- *                           type: string
- *                           description: URL to user's profile picture
- *                         statusMessage:
- *                           type: string
- *                           description: User's status message
- *                         lastSeen:
- *                           type: string
- *                           format: date-time
- *                           description: When the account was last active
+ *                     data:
+ *                       $ref: "#/components/schemas/Connection"
+ *       401:
+ *         description: Unauthorized - Invalid API key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *             examples:
  *               not_started:
  *                 summary: No connection attempt
@@ -254,6 +194,54 @@ router.post("/disconnect/:connectionId", requireApiKey, disconnectHandler);
  *                     readyAt: "2024-01-15T10:35:00.000Z"
  */
 router.get("/status", requireApiKey, getConnectionStatusHandler);
+
+/**
+ * @openapi
+ * /wa/status/{connectionId}:
+ *   get:
+ *     summary: Get specific WhatsApp connection status
+ *     description: Check the status of a specific WhatsApp connection by ID
+ *     tags: [WhatsApp]
+ *     security:
+ *       - apiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: connectionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Connection ID to check status for
+ *     responses:
+ *       200:
+ *         description: Connection status retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: "#/components/schemas/Success"
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: "#/components/schemas/Connection"
+ *       401:
+ *         description: Unauthorized - Invalid API key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       404:
+ *         description: Connection not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ */
 router.get("/status/:connectionId", requireApiKey, getConnectionStatusHandler);
 
 /**
@@ -261,59 +249,66 @@ router.get("/status/:connectionId", requireApiKey, getConnectionStatusHandler);
  * /wa/connections:
  *   get:
  *     summary: List all WhatsApp connections for the API key
+ *     description: Retrieve a list of all WhatsApp connections associated with the API key
  *     tags: [WhatsApp]
  *     security:
  *       - apiKeyAuth: []
  *     responses:
  *       200:
- *         description: List of connections
+ *         description: List of connections retrieved successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 ok:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                       status:
- *                         type: string
- *                         enum: [pending, ready, disconnected]
- *                       lastQrAt:
- *                         type: string
- *                         format: date-time
- *                       readyAt:
- *                         type: string
- *                         format: date-time
- *                       disconnectedAt:
- *                         type: string
- *                         format: date-time
- *                       createdAt:
- *                         type: string
- *                         format: date-time
+ *               allOf:
+ *                 - $ref: "#/components/schemas/Success"
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: "#/components/schemas/Connection"
+ *             examples:
+ *               multiple_connections:
+ *                 summary: Multiple connections
+ *                 value:
+ *                   ok: true
+ *                   data:
+ *                     - id: "507f1f77bcf86cd799439011"
+ *                       status: "ready"
+ *                       connectionStep: "ready"
+ *                       isReady: true
+ *                       message: "WhatsApp is connected and ready"
+ *                       readyAt: "2024-01-15T10:35:00.000Z"
+ *                       createdAt: "2024-01-15T10:30:00.000Z"
  *                       accountInfo:
- *                         type: object
- *                         properties:
- *                           phoneNumber:
- *                             type: string
- *                           whatsappId:
- *                             type: string
- *                           profileName:
- *                             type: string
- *                           platform:
- *                             type: string
- *                           profilePictureUrl:
- *                             type: string
- *                           statusMessage:
- *                             type: string
- *                           lastSeen:
- *                             type: string
- *                             format: date-time
+ *                         phoneNumber: "1234567890"
+ *                         whatsappId: "1234567890@c.us"
+ *                         profileName: "John Doe"
+ *                         platform: "android"
+ *                     - id: "507f1f77bcf86cd799439012"
+ *                       status: "pending"
+ *                       connectionStep: "qr_generated"
+ *                       isReady: false
+ *                       message: "QR code generated. Please scan it."
+ *                       lastQrAt: "2024-01-15T10:30:00.000Z"
+ *                       createdAt: "2024-01-15T10:29:00.000Z"
+ *               no_connections:
+ *                 summary: No connections
+ *                 value:
+ *                   ok: true
+ *                   data: []
+ *       401:
+ *         description: Unauthorized - Invalid API key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  */
 router.get("/connections", requireApiKey, listConnectionsHandler);
 

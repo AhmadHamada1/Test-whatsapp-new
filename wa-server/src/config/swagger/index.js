@@ -42,12 +42,20 @@ const options = {
         Error: {
           type: "object",
           properties: {
+            ok: {
+              type: "boolean",
+              example: false
+            },
+            message: {
+              type: "string",
+              description: "Error message"
+            },
             error: {
               type: "object",
               properties: {
                 message: {
                   type: "string",
-                  description: "Error message"
+                  description: "Detailed error message"
                 },
                 details: {
                   type: "array",
@@ -82,7 +90,7 @@ const options = {
             },
             status: {
               type: "string",
-              enum: ["pending", "authenticated", "ready", "auth_failed", "disconnected"],
+              enum: ["not_started", "pending", "authenticated", "ready", "auth_failed", "disconnected"],
               description: "Connection status"
             },
             connectionStep: {

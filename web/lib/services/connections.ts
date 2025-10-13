@@ -22,6 +22,6 @@ export type Connection = {
 
 export async function getConnections(apiKeyId: string): Promise<Connection[]> {
   const http = await createServerHttp()
-  const { data } = await http.get<{ data: Connection[] }>(`/wa/admin/connections/${apiKeyId}`)
+  const { data } = await http.get<{ data: Connection[] }>(`/wa/monitor/connections/${apiKeyId}`)
   return data.data
 }
