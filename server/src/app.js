@@ -8,7 +8,7 @@ const { createCorsMiddleware } = require("./config/cors");
 const routes = require("./routes");
 const { errorHandler } = require("./core/middleware/errorHandler");
 const swaggerUi = require("swagger-ui-express");
-const { swaggerSpecAdmin, swaggerSpecWa } = require("./config/swagger");
+const { swaggerSpec } = require("./config/swagger");
 
 function setupSwaggerDocs(app) {
   // Merge both API specs into one
@@ -17,7 +17,7 @@ function setupSwaggerDocs(app) {
     info: {
       title: "WhatsApp Bot API",
       version: "1.0.0",
-      description: "Complete API documentation for WhatsApp Bot - includes both WhatsApp messaging and Admin management APIs"
+      description: "Complete API documentation for WhatsApp Bot - includes Admin management and monitoring APIs"
     },
     servers: [
       { url: "http://localhost:4000" },
@@ -31,33 +31,20 @@ function setupSwaggerDocs(app) {
           bearerFormat: "JWT",
           description: "JWT token for admin authentication"
         },
-        apiKeyAuth: {
-          type: "apiKey",
-          in: "header",
-          name: "x-api-key",
-          description: "API key for WhatsApp API authentication"
-        }
       }
     },
     tags: [
-      {
-        name: "WhatsApp",
-        description: "WhatsApp messaging and connection management"
-      },
       {
         name: "Admin",
         description: "Admin API for managing API keys, users, and system administration"
       },
       {
         name: "Health",
-        description: "Health check and monitoring endpoints"
+        description: "Health check endpoints"
       }
     ],
     paths: {
-      // WhatsApp API paths
-      ...swaggerSpecWa.paths,
-      // Admin API paths
-      ...swaggerSpecAdmin.paths
+      ...swaggerSpec.paths,
     }
   };
 

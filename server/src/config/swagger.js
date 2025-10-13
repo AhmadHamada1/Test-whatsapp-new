@@ -2,8 +2,8 @@
 
 const swaggerJsdoc = require("swagger-jsdoc");
 
-// Admin API Swagger Definition
-const swaggerDefinitionAdmin = {
+// API Swagger Definition
+const swaggerDefinition = {
   openapi: "3.0.0",
   info: {
     title: "Admin API",
@@ -27,19 +27,16 @@ const swaggerDefinitionAdmin = {
   security: [{ bearerAuth: [] }],
 };
 
-// Options for Admin API
-const optionsAdmin = {
-  swaggerDefinition: swaggerDefinitionAdmin,
+// Options for API
+const options = {
+  swaggerDefinition: swaggerDefinition,
   apis: [
-    "src/modules/admin/**/*.js",
-    "src/modules/api-keys/**/*.js",
-    "src/modules/auth/**/*.js",
-    "src/modules/api-call-logs/**/*.js",
+    "src/modules/**/*.js",
     "src/routes.js",
   ],
 };
 
 // Generate Swagger spec
-const swaggerSpecAdmin = swaggerJsdoc(optionsAdmin);
+const swaggerSpec = swaggerJsdoc(options);
 
-module.exports = { swaggerSpecAdmin };
+module.exports = { swaggerSpec };
