@@ -12,7 +12,15 @@ This is the WhatsApp Web Bot server that handles WhatsApp connections and messag
 - API key authentication
 - Health monitoring
 
-## API Endpoints
+## API Documentation
+
+The API is fully documented with OpenAPI 3.0 (Swagger) specification.
+
+### Interactive Documentation
+- **Swagger UI**: `http://localhost:4001/api-docs`
+- **OpenAPI JSON**: `http://localhost:4001/api-docs-json`
+
+### API Endpoints
 
 - `POST /wa/add-number` - Start WhatsApp connection and get QR code
 - `GET /wa/status` - Get connection status
@@ -21,6 +29,15 @@ This is the WhatsApp Web Bot server that handles WhatsApp connections and messag
 - `POST /wa/disconnect/:connectionId` - Disconnect specific connection
 - `POST /wa/send` - Send message (text or media)
 - `GET /healthz` - Health check
+
+### Authentication
+
+All WhatsApp endpoints require API key authentication via the `x-api-key` header.
+
+```bash
+curl -X POST http://localhost:4001/wa/add-number \
+  -H "x-api-key: your-api-key-here"
+```
 
 ## Environment Variables
 
@@ -76,5 +93,6 @@ Both servers share the same MongoDB database for data consistency.
 - WhatsApp Web.js for WhatsApp integration
 - MongoDB for data persistence
 - Zod for request validation
+- Swagger UI Express for API documentation
 - Helmet for security
 - CORS for cross-origin requests

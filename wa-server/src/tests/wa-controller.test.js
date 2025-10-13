@@ -2,10 +2,10 @@
 
 const request = require('supertest');
 const express = require('express');
-const { addNumberHandler, listConnectionsHandler, getConnectionStatusHandler } = require('../src/modules/wa/controller');
+const { addNumberHandler, listConnectionsHandler, getConnectionStatusHandler } = require('../controllers/wa.controller');
 
 // Mock the service layer
-jest.mock('../src/modules/wa/service', () => ({
+jest.mock('../services/wa.service', () => ({
   addNumber: jest.fn(),
   listConnections: jest.fn(),
   getConnectionStatus: jest.fn(),
@@ -14,7 +14,7 @@ jest.mock('../src/modules/wa/service', () => ({
   disconnectNumber: jest.fn()
 }));
 
-const { addNumber, listConnections, getConnectionStatus } = require('../src/modules/wa/service');
+const { addNumber, listConnections, getConnectionStatus } = require('../services/wa.service');
 
 describe('WhatsApp Controller Tests', () => {
   let app;

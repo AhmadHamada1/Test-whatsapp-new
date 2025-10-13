@@ -4,7 +4,8 @@ const express = require("express");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const cors = require("./config/cors");
-const { errorHandler } = require("./core/middleware/errorHandler");
+const { errorHandler } = require("./middleware/errorHandler");
+const { specs, swaggerUi, swaggerOptions } = require("./config/swagger");
 const routes = require("./routes");
 
 const app = express();
@@ -21,6 +22,9 @@ app.use(morgan("combined"));
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Swagger documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
 
 // Routes
 app.use("/", routes);

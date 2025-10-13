@@ -1,10 +1,10 @@
 "use strict";
 
 const { sha256 } = require("../utils/crypto");
-const { ApiKey } = require("../../modules/api-keys/model");
+const { ApiKey } = require("../models/api-keys.model");
 
 async function requireApiKey(req, res, next) {
-  try {    
+  try {
     const headerKey = req.header("x-api-key");
     if (!headerKey) return next({ status: 401, message: "Missing API key" });
 

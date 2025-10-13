@@ -1,7 +1,7 @@
 "use strict";
 
 const { z } = require("zod");
-const { VALIDATION_MESSAGES } = require("./constants");
+const { VALIDATION_MESSAGES } = require("../constants/wa.constants");
 
 const sendSchema = z
   .object({

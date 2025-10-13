@@ -3,7 +3,7 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
 const { createApp } = require('../src/app');
-const { WaConnection } = require('../src/modules/wa/model');
+const { WaConnection } = require('../models/wa.model');
 
 // Mock whatsapp-web.js to avoid real WhatsApp connections
 jest.mock('whatsapp-web.js', () => ({

@@ -1,11 +1,11 @@
 "use strict";
 
 const { Router } = require("express");
-const { validate } = require("../../core/middleware/validate");
-const { requireApiKey } = require("../../core/middleware/requireApiKey");
-const { createApiLogger } = require("../../core/middleware/apiLogger");
-const { addNumberHandler, listConnectionsHandler, sendHandler, disconnectHandler, getConnectionStatusHandler } = require("./controller");
-const { sendSchema } = require("./validators");
+const { validate } = require("../middleware/validate");
+const { requireApiKey } = require("../middleware/requireApiKey");
+const { createApiLogger } = require("../middleware/apiLogger");
+const { addNumberHandler, listConnectionsHandler, sendHandler, disconnectHandler, getConnectionStatusHandler } = require("../controllers/wa.controller");
+const { sendSchema } = require("../validators/wa.validators");
 
 const router = Router();
 
@@ -26,37 +26,30 @@ router.use(createApiLogger());
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 connectionId:
- *                   type: string
- *                   description: Unique identifier for this connection
- *                 alreadyConnected:
- *                   type: boolean
- *                   description: True if already connected
- *                 qr:
- *                   type: string
- *                   description: QR code string for WhatsApp pairing
- *                 qrImage:
- *                   type: string
- *                   description: Base64 encoded PNG image of the QR code
- *                   format: data-url
- *                 accountInfo:
- *                   type: object
- *                   description: Account information (only present if alreadyConnected is true)
+ *               allOf:
+ *                 - $ref: "#/components/schemas/Success"
+ *                 - type: object
  *                   properties:
- *                     phoneNumber:
- *                       type: string
- *                     whatsappId:
- *                       type: string
- *                     profileName:
- *                       type: string
- *                     platform:
- *                       type: string
- *                     profilePictureUrl:
- *                       type: string
- *                     statusMessage:
- *                       type: string
+ *                     data:
+ *                       $ref: "#/components/schemas/QRCode"
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       401:
+ *         description: Unauthorized - Invalid API key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *             examples:
  *               connected:
  *                 summary: Already connected
@@ -337,45 +330,43 @@ router.get("/connections", requireApiKey, listConnectionsHandler);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               to:
- *                 type: string
- *                 description: Recipient phone number
- *               text:
- *                 type: string
- *                 description: Text message content
- *               media:
- *                 type: object
- *                 properties:
- *                   mimetype:
- *                     type: string
- *                   filename:
- *                     type: string
- *                   dataBase64:
- *                     type: string
- *                 description: Media message content
- *               connectionId:
- *                 type: string
- *                 description: Connection ID to use for sending the message
- *             required: [to, connectionId]
+ *             $ref: "#/components/schemas/Message"
  *     responses:
  *       200:
- *         description: Message sent
+ *         description: Message sent successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 ok:
- *                   type: boolean
- *                 data:
- *                   type: object
+ *               allOf:
+ *                 - $ref: "#/components/schemas/Success"
+ *                 - type: object
  *                   properties:
- *                     id:
- *                       type: string
- *                     timestamp:
- *                       type: number
+ *                     data:
+ *                       $ref: "#/components/schemas/MessageResponse"
+ *       400:
+ *         description: Bad request - Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       401:
+ *         description: Unauthorized - Invalid API key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       404:
+ *         description: Connection not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  */
 router.post("/send", requireApiKey, validate(sendSchema), sendHandler);
 

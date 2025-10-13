@@ -1,12 +1,12 @@
 "use strict";
 
 const mongoose = require('mongoose');
-const { WaConnection } = require('../src/modules/wa/model');
+const { WaConnection } = require('../models/wa.model');
 const { 
   listConnections,
   getConnectionStatus,
   cleanupDisconnectedSessions 
-} = require('../src/modules/wa/service');
+} = require('../services/wa.service');
 
 // Mock whatsapp-web.js
 jest.mock('whatsapp-web.js', () => ({

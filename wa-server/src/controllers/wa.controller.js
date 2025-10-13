@@ -1,6 +1,6 @@
 "use strict";
 
-const { addNumber, sendTextMessage, sendMediaMessage, listConnections, disconnectNumber, getConnectionStatus, getConnectionStatusById } = require("./service");
+const { addNumber, sendTextMessage, sendMediaMessage, listConnections, disconnectNumber, getConnectionStatus, getConnectionStatusById } = require("../services/wa.service");
 
 async function addNumberHandler(req, res, next) {
   try {
@@ -55,7 +55,7 @@ async function sendHandler(req, res, next) {
 async function getConnectionStatusHandler(req, res, next) {
   try {
     const { connectionId } = req.params;
-    const result = connectionId 
+    const result = connectionId
       ? await getConnectionStatusById(req.apiKey._id, connectionId)
       : await getConnectionStatus(req.apiKey._id);
     res.json({ ok: true, data: result });

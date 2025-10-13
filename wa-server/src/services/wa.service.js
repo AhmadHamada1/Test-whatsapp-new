@@ -4,7 +4,7 @@ const { Client, MessageMedia, RemoteAuth } = require("whatsapp-web.js");
 const { MongoStore } = require("wwebjs-mongo");
 const mongoose = require("mongoose");
 const QRCode = require("qrcode");
-const { WaConnection } = require("./model");
+const { WaConnection } = require("../models/wa.model");
 const { 
   HTTP_STATUS, 
   CONNECTION_STATUS, 
@@ -14,7 +14,7 @@ const {
   SUCCESS_MESSAGES,
   formatErrorMessage,
   getStatusMessage 
-} = require("./constants");
+} = require("../constants/wa.constants");
 
 // In-memory stores keyed by connectionId
 const clientsByConnectionId = new Map();

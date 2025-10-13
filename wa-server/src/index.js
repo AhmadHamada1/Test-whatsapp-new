@@ -4,7 +4,7 @@ require("dotenv").config();
 
 const app = require("./app");
 const { connectToDatabase } = require("./config/db");
-const { restoreExistingConnections, cleanupDisconnectedSessions } = require("./modules/wa/service");
+const { restoreExistingConnections, cleanupDisconnectedSessions } = require("./services/wa.service");
 const config = require("./config/env");
 
 async function startServer() {
