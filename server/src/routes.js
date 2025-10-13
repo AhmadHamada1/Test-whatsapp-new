@@ -14,11 +14,14 @@ router.get("/healthz", (req, res) => {
   res.json({ ok: true });
 });
 
+// Core system routes
 router.use("/auth", authRoutes);
 router.use("/admin", adminRoutes);
 router.use("/api-keys", apiKeysRoutes);
-router.use("/wa", waRoutes);
 router.use("/api-call-logs", apiCallLogsRoutes);
 router.use("/health", healthRoutes);
+
+// Customer Whatsapp API Routes
+router.use("/wa", waRoutes);
 
 module.exports = router;

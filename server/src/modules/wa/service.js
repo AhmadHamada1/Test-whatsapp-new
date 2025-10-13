@@ -5,6 +5,16 @@ const { MongoStore } = require("wwebjs-mongo");
 const mongoose = require("mongoose");
 const QRCode = require("qrcode");
 const { WaConnection } = require("./model");
+const { 
+  HTTP_STATUS, 
+  CONNECTION_STATUS, 
+  CONNECTION_STEP, 
+  ERROR_MESSAGES, 
+  STATUS_MESSAGES, 
+  SUCCESS_MESSAGES,
+  formatErrorMessage,
+  getStatusMessage 
+} = require("./constants");
 
 // In-memory stores keyed by connectionId
 const clientsByConnectionId = new Map();
@@ -35,7 +45,7 @@ async function restoreExistingConnections() {
     
     // Find all ready connections that should be restored
     const readyConnections = await WaConnection.find({ 
-      status: "ready" 
+      status: CONNECTION_STATUS.READY 
     }).sort({ createdAt: -1 });
     
     console.log(`Found ${readyConnections.length} ready connections to restore`);
@@ -73,9 +83,9 @@ async function restoreExistingConnections() {
         console.error(`Failed to restore connection ${connectionId}:`, error.message);
         // Mark connection as disconnected if restoration fails
         await updateConnection(connectionId, {
-          status: "disconnected",
+          status: CONNECTION_STATUS.DISCONNECTED,
           disconnectedAt: new Date(),
-          connectionStep: "disconnected",
+          connectionStep: CONNECTION_STEP.DISCONNECTED,
           error: `Restoration failed: ${error.message}`
         });
       }
@@ -99,8 +109,8 @@ function getQrResolvers(connectionId) {
 async function createConnection(apiKeyId) {
   const conn = new WaConnection({
     apiKey: apiKeyId,
-    status: "pending",
-    connectionStep: "not_started"
+    status: CONNECTION_STATUS.PENDING,
+    connectionStep: CONNECTION_STEP.NOT_STARTED
   });
   await conn.save();
   return conn;
@@ -135,7 +145,7 @@ async function createFreshClientForSending(connectionId) {
   // Check if session exists first
   const sessionExists = await hasValidSession(connectionId);
   if (!sessionExists) {
-    throw new Error(`No valid session found for connection ${connectionId}. Please scan the QR code first.`);
+    throw new Error(formatErrorMessage(ERROR_MESSAGES.NO_VALID_SESSION, { connectionId }));
   }
   
   // Ensure MongoDB store is initialized
@@ -157,7 +167,7 @@ async function createFreshClientForSending(connectionId) {
     const timeout = setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        reject(new Error('Client initialization timeout'));
+        reject(new Error(ERROR_MESSAGES.CLIENT_INITIALIZATION_TIMEOUT));
       }
     }, 30000); // 30 second timeout
 
@@ -174,7 +184,7 @@ async function createFreshClientForSending(connectionId) {
       if (!resolved) {
         resolved = true;
         clearTimeout(timeout);
-        reject(new Error(`Authentication failed: ${msg}`));
+        reject(new Error(formatErrorMessage(ERROR_MESSAGES.AUTHENTICATION_FAILED, { msg })));
       }
     });
 
@@ -182,7 +192,7 @@ async function createFreshClientForSending(connectionId) {
       if (!resolved) {
         resolved = true;
         clearTimeout(timeout);
-        reject(new Error(`Client disconnected: ${reason}`));
+        reject(new Error(formatErrorMessage(ERROR_MESSAGES.CLIENT_DISCONNECTED, { reason })));
       }
     });
 
@@ -212,8 +222,8 @@ async function ensureClientForConnection(connectionId) {
     await updateConnection(connectionId, { 
       lastQr: qr, 
       lastQrAt: new Date(), 
-      status: "pending",
-      connectionStep: "qr_generated"
+      status: CONNECTION_STATUS.PENDING,
+      connectionStep: CONNECTION_STEP.QR_GENERATED
     });
     const resolvers = getQrResolvers(connectionId);
     if (resolvers.length > 0) {
@@ -226,9 +236,9 @@ async function ensureClientForConnection(connectionId) {
   client.on("authenticated", async (session) => {
     console.log(`WhatsApp authenticated for connection=${connectionId}`);
     await updateConnection(connectionId, { 
-      status: "authenticated", 
+      status: CONNECTION_STATUS.AUTHENTICATED, 
       authenticatedAt: new Date(),
-      connectionStep: "authenticated"
+      connectionStep: CONNECTION_STEP.AUTHENTICATED
     });
   });
 
@@ -241,18 +251,18 @@ async function ensureClientForConnection(connectionId) {
       const accountInfo = await captureAccountInfo(client);
       
       await updateConnection(connectionId, { 
-        status: "ready", 
+        status: CONNECTION_STATUS.READY, 
         readyAt: new Date(),
-        connectionStep: "ready",
+        connectionStep: CONNECTION_STEP.READY,
         ...accountInfo
       });
     } catch (error) {
       console.error(`Failed to capture account info for connection=${connectionId}:`, error);
       // Still mark as ready even if account info capture fails
       await updateConnection(connectionId, { 
-        status: "ready", 
+        status: CONNECTION_STATUS.READY, 
         readyAt: new Date(),
-        connectionStep: "ready"
+        connectionStep: CONNECTION_STEP.READY
       });
     }
   });
@@ -260,9 +270,9 @@ async function ensureClientForConnection(connectionId) {
   client.on("auth_failure", async (msg) => {
     console.log(`WhatsApp authentication failed for connection=${connectionId}:`, msg);
     await updateConnection(connectionId, { 
-      status: "auth_failed", 
+      status: CONNECTION_STATUS.AUTH_FAILED, 
       authFailedAt: new Date(),
-      connectionStep: "auth_failed",
+      connectionStep: CONNECTION_STEP.AUTH_FAILED,
       error: msg
     });
   });
@@ -271,9 +281,9 @@ async function ensureClientForConnection(connectionId) {
     console.log(`WhatsApp disconnected for connection=${connectionId}:`, reason);
     readyByConnectionId.set(connectionId, false);
     await updateConnection(connectionId, { 
-      status: "disconnected", 
+      status: CONNECTION_STATUS.DISCONNECTED, 
       disconnectedAt: new Date(),
-      connectionStep: "disconnected",
+      connectionStep: CONNECTION_STEP.DISCONNECTED,
       disconnectReason: reason
     });
   });
@@ -316,7 +326,7 @@ async function captureAccountInfo(client) {
   try {
     // Get basic user information from client.info
     if (!client.info) {
-      throw new Error('Client info not available');
+      throw new Error(ERROR_MESSAGES.CLIENT_INFO_NOT_AVAILABLE);
     }
     
     accountInfo.phoneNumber = client.info.wid.user;
@@ -372,7 +382,7 @@ async function addNumber(apiKeyId) {
   // Check if there's already a ready connection for this API key
   const existingReadyConnection = await WaConnection.findOne({ 
     apiKey: apiKeyId, 
-    status: "ready" 
+    status: CONNECTION_STATUS.READY 
   });
   
   if (existingReadyConnection) {
@@ -417,8 +427,8 @@ async function addNumber(apiKeyId) {
 
 function assertConnectionReady(connectionId) {
   if (!clientsByConnectionId.has(connectionId)) {
-    const err = new Error("WhatsApp connection is not initialized yet. Please scan the QR code first.");
-    err.status = 400;
+    const err = new Error(ERROR_MESSAGES.CONNECTION_NOT_INITIALIZED);
+    err.status = HTTP_STATUS.BAD_REQUEST;
     throw err;
   }
   
@@ -432,15 +442,15 @@ function assertConnectionReady(connectionId) {
   // Additional check: ensure the client is actually available and properly initialized
   const client = clientsByConnectionId.get(connectionId);
   if (!client) {
-    const err = new Error("WhatsApp client is not available. Please try again.");
-    err.status = 500;
+    const err = new Error(ERROR_MESSAGES.CLIENT_NOT_AVAILABLE);
+    err.status = HTTP_STATUS.INTERNAL_SERVER_ERROR;
     throw err;
   }
   
   // Check if the client's page object is available (indicates proper initialization)
   if (!client.pupPage) {
-    const err = new Error("WhatsApp client is not properly initialized. The browser session may have crashed. Please try reconnecting your number.");
-    err.status = 500;
+    const err = new Error(ERROR_MESSAGES.CLIENT_NOT_PROPERLY_INITIALIZED);
+    err.status = HTTP_STATUS.INTERNAL_SERVER_ERROR;
     throw err;
   }
 }
@@ -455,24 +465,24 @@ async function getClientForConnection(apiKeyId, connectionId) {
   });
   
   if (!connection) {
-    const err = new Error("Connection not found or not associated with this API key");
-    err.status = 404;
+    const err = new Error(ERROR_MESSAGES.CONNECTION_NOT_FOUND);
+    err.status = HTTP_STATUS.NOT_FOUND;
     throw err;
   }
   
   console.log(`Connection found with status: ${connection.status}`);
 
-  if (!['ready', 'authenticated'].includes(connection.status)) {
+  if (![CONNECTION_STATUS.READY, CONNECTION_STATUS.AUTHENTICATED].includes(connection.status)) {
     let errorMessage = "Connection is not ready. Status: " + connection.status;
-    if (connection.status === 'pending') {
+    if (connection.status === CONNECTION_STATUS.PENDING) {
       errorMessage += ". Please scan the QR code first.";
-    } else if (connection.status === 'auth_failed') {
+    } else if (connection.status === CONNECTION_STATUS.AUTH_FAILED) {
       errorMessage += ". Authentication failed. Please try scanning the QR code again.";
-    } else if (connection.status === 'disconnected') {
+    } else if (connection.status === CONNECTION_STATUS.DISCONNECTED) {
       errorMessage += ". Connection was disconnected. Please add a new number.";
     }
     const err = new Error(errorMessage);
-    err.status = 400;
+    err.status = HTTP_STATUS.BAD_REQUEST;
     throw err;
   }
 
@@ -590,7 +600,7 @@ async function sendMessageWithSessionRecreation(apiKeyId, to, messageContent, co
         }
       } catch (freshError) {
         console.error(`Fresh client also failed for connection ${connectionId}:`, freshError);
-        throw new Error(`Failed to send message: ${freshError.message}`);
+        throw new Error(formatErrorMessage(ERROR_MESSAGES.FAILED_TO_SEND_MESSAGE, { error: freshError.message }));
       }
     }
     
@@ -618,8 +628,8 @@ async function getConnectionStatus(apiKeyId, connectionId = null) {
       });
       
       if (!connection) {
-        const err = new Error("Connection not found or not associated with this API key");
-        err.status = 404;
+        const err = new Error(ERROR_MESSAGES.CONNECTION_NOT_FOUND);
+        err.status = HTTP_STATUS.NOT_FOUND;
         throw err;
       }
     } else {
@@ -629,9 +639,9 @@ async function getConnectionStatus(apiKeyId, connectionId = null) {
       
       if (!connection) {
         return {
-          status: "not_started",
-          message: "No connection attempt found. Call /wa/add-number first.",
-          connectionStep: "not_started"
+          status: CONNECTION_STATUS.NOT_STARTED,
+          message: STATUS_MESSAGES.NO_CONNECTION_ATTEMPT,
+          connectionStep: CONNECTION_STEP.NOT_STARTED
         };
       }
     }
@@ -665,31 +675,13 @@ async function getConnectionStatus(apiKeyId, connectionId = null) {
     if (error.status) {
       throw error;
     }
-    const err = new Error("Failed to get connection status: " + error.message);
-    err.status = 500;
+    const err = new Error(formatErrorMessage(ERROR_MESSAGES.FAILED_TO_GET_STATUS, { error: error.message }));
+    err.status = HTTP_STATUS.INTERNAL_SERVER_ERROR;
     throw err;
   }
 }
 
-function getStatusMessage(status, connectionStep) {
-  switch (status) {
-    case "pending":
-      if (connectionStep === "qr_generated") {
-        return "QR code generated. Please scan it with your WhatsApp mobile app.";
-      }
-      return "Connection in progress...";
-    case "authenticated":
-      return "WhatsApp authenticated successfully. Finalizing connection...";
-    case "ready":
-      return "WhatsApp is connected and ready to send messages!";
-    case "auth_failed":
-      return "Authentication failed. Please try scanning the QR code again.";
-    case "disconnected":
-      return "WhatsApp connection was disconnected.";
-    default:
-      return "Unknown connection status.";
-  }
-}
+// getStatusMessage function is now imported from constants.js
 
 async function disconnectNumber(apiKeyId, connectionId = null) {
   try {
@@ -700,24 +692,24 @@ async function disconnectNumber(apiKeyId, connectionId = null) {
       connection = await WaConnection.findOne({ 
         _id: connectionId,
         apiKey: apiKeyId,
-        status: { $in: ["ready", "pending"] }
+        status: { $in: [CONNECTION_STATUS.READY, CONNECTION_STATUS.PENDING] }
       });
 
       if (!connection) {
-        const err = new Error("Connection not found or not active for this API key");
-        err.status = 404;
+        const err = new Error(ERROR_MESSAGES.CONNECTION_NOT_ACTIVE);
+        err.status = HTTP_STATUS.NOT_FOUND;
         throw err;
       }
     } else {
       // Disconnect the most recent active connection
       connection = await WaConnection.findOne({ 
         apiKey: apiKeyId,
-        status: { $in: ["ready", "pending"] }
+        status: { $in: [CONNECTION_STATUS.READY, CONNECTION_STATUS.PENDING] }
       }).sort({ createdAt: -1 });
 
       if (!connection) {
-        const err = new Error("No active connection found for this API key");
-        err.status = 404;
+        const err = new Error(ERROR_MESSAGES.NO_ACTIVE_CONNECTION);
+        err.status = HTTP_STATUS.NOT_FOUND;
         throw err;
       }
     }
@@ -739,14 +731,14 @@ async function disconnectNumber(apiKeyId, connectionId = null) {
 
     // Update connection status in database
     await WaConnection.findByIdAndUpdate(connectionIdStr, { 
-      status: "disconnected",
+      status: CONNECTION_STATUS.DISCONNECTED,
       disconnectedAt: new Date(),
-      connectionStep: "disconnected"
+      connectionStep: CONNECTION_STEP.DISCONNECTED
     });
 
     return { 
       success: true, 
-      message: "WhatsApp connection disconnected successfully",
+      message: SUCCESS_MESSAGES.CONNECTION_DISCONNECTED_SUCCESSFULLY,
       connectionId: connectionIdStr,
       disconnectedAt: new Date()
     };
@@ -757,8 +749,8 @@ async function disconnectNumber(apiKeyId, connectionId = null) {
     }
     
     // For other errors, wrap them
-    const err = new Error("Failed to disconnect WhatsApp: " + error.message);
-    err.status = 500;
+    const err = new Error(formatErrorMessage(ERROR_MESSAGES.FAILED_TO_DISCONNECT, { error: error.message }));
+    err.status = HTTP_STATUS.INTERNAL_SERVER_ERROR;
     throw err;
   }
 }
@@ -777,7 +769,7 @@ async function cleanupDisconnectedSessions() {
     
     // Find all disconnected connections
     const disconnectedConnections = await WaConnection.find({ 
-      status: "disconnected" 
+      status: CONNECTION_STATUS.DISCONNECTED 
     });
     
     for (const connection of disconnectedConnections) {

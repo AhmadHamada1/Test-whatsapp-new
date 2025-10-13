@@ -1,10 +1,11 @@
 "use strict";
 
 const { z } = require("zod");
+const { VALIDATION_MESSAGES } = require("./constants");
 
 const sendSchema = z
   .object({
-    to: z.string().min(6, "Invalid recipient"),
+    to: z.string().min(6, VALIDATION_MESSAGES.INVALID_RECIPIENT),
     text: z.string().min(1).optional(),
     media: z
       .object({
@@ -13,10 +14,10 @@ const sendSchema = z
         dataBase64: z.string().min(1),
       })
       .optional(),
-    connectionId: z.string().min(1, "Connection ID is required"),
+    connectionId: z.string().min(1, VALIDATION_MESSAGES.CONNECTION_ID_REQUIRED),
   })
   .refine((v) => Boolean(v.text) || Boolean(v.media), {
-    message: "Either text or media must be provided",
+    message: VALIDATION_MESSAGES.TEXT_OR_MEDIA_REQUIRED,
     path: ["text"],
   });
 
