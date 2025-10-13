@@ -1,7 +1,28 @@
 # 📱 WhatsApp WebJS API Wrapper
 
 A lightweight Node.js + Express API wrapper built on top of [whatsapp-web.js](https://wwebjs.dev/).  
-It allows external applications to connect WhatsApp accounts, send messages, and manage multiple sessions programmatically through REST APIs.
+It enables external applications to connect WhatsApp accounts, send messages, and manage multiple sessions programmatically through REST APIs.
+
+---
+
+## 📚 Table of Contents
+- [Overview](#-overview)
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [API Endpoints](#-api-endpoints)
+- [Connection Lifecycle](#-connection-lifecycle)
+- [Session Persistence](#-session-persistence)
+- [Receiving Messages](#-receiving-messages)
+- [Database Schema](#-database-schema)
+- [Event Handling](#-event-handling)
+- [Error Handling](#-error-handling)
+- [Security](#-security)
+- [Scaling & Concurrency](#-scaling--concurrency)
+- [Environment Setup](#-environment-setup)
+- [Testing & Usage](#-testing--usage)
+- [Future Enhancements](#-future-enhancements)
+- [Author](#-author)
+- [License](#-license)
 
 ---
 
@@ -17,125 +38,47 @@ It allows external applications to connect WhatsApp accounts, send messages, and
 
 ---
 
-## 🏗 Tech Stack
+## 🏗 Architecture
 
-| Component | Technology |
-|------------|-------------|
-| **Backend Framework** | Node.js + Express.js |
-| **WhatsApp API** | [whatsapp-web.js](https://wwebjs.dev/) |
-| **Database** | MongoDB (with Mongoose ORM) |
-| **QR Generation** | `qrcode` npm package |
-| **Session Management** | MongoDB persistence layer |
-| **Language** | JavaScript / TypeScript (optional) |
+```
+              ┌───────────────────────────────┐
+              │         Client App            │
+              │ (Dashboard, Mobile, Backend)  │
+              └──────────────┬────────────────┘
+                             │ REST API
+                             ▼
+                ┌──────────────────────────────┐
+                │     Express.js API Server    │
+                │  - Routes (/wa/*)            │
+                │  - Controllers               │
+                │  - WhatsApp Service Layer    │
+                └──────────────┬───────────────┘
+                               │
+                        WhatsApp-Web.js
+                               │
+                             WhatsApp
+                               │
+                               ▼
+                         MongoDB (Sessions)
+```
+
+### Key Components
+
+- **Connection Model:** Stores session state, profile info, timestamps, etc.  
+- **WhatsApp Service:** Manages multiple WhatsApp clients, sessions, and event listeners.  
+- **Controller Layer:** Handles HTTP requests and responses.  
+- **Routes:** Define Express endpoints for `/wa/*` APIs.  
 
 ---
 
 ## 📡 API Endpoints
 
-### 1. `POST /wa/add-number`
-Start a new WhatsApp connection and return a QR code for scanning.
-
-**Response:**
-```json
-{
-  "connectionId": "abc123",
-  "status": "pending",
-  "qr": "data:image/png;base64,..."
-}
-```
-
-**Behavior:**
-- Generates a unique connection ID
-- Returns QR code as Base64
-- Listens for authentication and connection events
-- Updates MongoDB once connected
-
----
-
-### 2. `POST /wa/disconnect/:connectionId`
-Disconnects and archives the WhatsApp connection.
-
-**Response:**
-```json
-{
-  "message": "Connection abc123 disconnected and archived."
-}
-```
-
-**Behavior:**
-- Stops the client instance  
-- Removes session cache  
-- Updates database state to `disconnected`  
-
----
-
-### 3. `POST /wa/send/:connectionId`
-Sends a message through a connected WhatsApp session.
-
-**Request Body:**
-```json
-{
-  "to": "923001234567",
-  "message": "Hello from API!"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "messageId": "AB12345",
-  "timestamp": "2025-10-13T12:00:00Z"
-}
-```
-
-**Behavior:**
-- Validates connection  
-- Refreshes session if needed  
-- Sends the message through WhatsApp  
-
----
-
-### 4. `GET /wa/connections`
-Returns a list of all connections with their statuses.
-
-**Response:**
-```json
-[
-  {
-    "connectionId": "abc123",
-    "status": "connected",
-    "number": "923001234567",
-    "lastActive": "2025-10-13T12:00:00Z"
-  }
-]
-```
-
----
-
-## 🧩 Architecture Overview
-
-```
-src/
- ┣ 📁 models/
- ┃ ┗ connection.model.js
- ┣ 📁 services/
- ┃ ┗ whatsapp.service.js
- ┣ 📁 routes/
- ┃ ┗ wa.routes.js
- ┣ 📁 controllers/
- ┃ ┗ wa.controller.js
- ┣ 📁 utils/
- ┃ ┗ qrcode.util.js
- ┣ server.js
-```
-
-### Key Components
-
-- **Connection Model:** stores session state, profile info, timestamps, etc.  
-- **WhatsApp Service:** manages multiple WhatsApp clients, sessions, and event listeners.  
-- **Controller Layer:** handles HTTP requests and responses.  
-- **Routes:** define Express endpoints for `/wa/*` APIs.  
+| Method | Endpoint | Description | Request Body | Example Response |
+|---------|-----------|-------------|---------------|------------------|
+| **POST** | `/wa/add-number` | Creates a new WhatsApp client session and returns a QR code for device linking. | — | `{ "connectionId": "abc123", "status": "pending", "qr": "data:image/png;base64,..." }` |
+| **POST** | `/wa/disconnect/:connectionId` | Disconnects and archives an existing WhatsApp connection. | — | `{ "message": "Connection abc123 disconnected and archived." }` |
+| **POST** | `/wa/send/:connectionId` | Sends a message using a specific active WhatsApp connection. | `{ "to": "923001234567", "message": "Hello from API!" }` | `{ "success": true, "messageId": "AB12345", "timestamp": "2025-10-13T12:00:00Z" }` |
+| **GET** | `/wa/connections` | Retrieves all existing WhatsApp connections with their current states. | — | `[ { "connectionId": "abc123", "status": "connected", "number": "923001234567", "lastActive": "2025-10-13T12:00:00Z" } ]` |
 
 ---
 
@@ -143,12 +86,12 @@ src/
 
 1. **Add Number (`/wa/add-number`)**
    - Creates a new WhatsApp client
-   - Returns QR code to be scanned
+   - Returns QR code for scanning
    - Saves session and updates DB when connected
 
 2. **Send Message (`/wa/send/:id`)**
-   - Validates if the client is active
-   - Refreshes session automatically if needed
+   - Validates client state
+   - Restores session automatically if expired
    - Sends message through WhatsApp
 
 3. **Disconnect (`/wa/disconnect/:id`)**
@@ -156,23 +99,53 @@ src/
    - Archives record in MongoDB
 
 4. **Retrieve All (`/wa/connections`)**
-   - Fetches all connections with their current state
+   - Fetches all connections with their state
 
 ---
 
-## 💾 MongoDB Schema (Connection Example)
+## 🧠 Session Persistence
+
+Each WhatsApp client generates a unique session.  
+When authenticated, session credentials are **serialized** and stored in MongoDB.
+
+### On Server Restart
+- The WhatsApp Service rehydrates all active sessions.  
+- Clients reconnect automatically using stored session data.  
+- Expired sessions are marked as `disconnected`.
+
+---
+
+## 📨 Receiving Messages
+
+The system listens for incoming messages on connected clients:
 
 ```js
-{
-  connectionId: String,
-  status: String, // 'pending' | 'connected' | 'disconnected'
+client.on('message', async (msg) => {
+  console.log(`Message from ${msg.from}: ${msg.body}`);
+});
+```
+
+Future versions may expose `/wa/webhook` for external message forwarding.
+
+---
+
+## 💾 Database Schema
+
+Example **Mongoose Schema** for connection state:
+
+```js
+import mongoose from 'mongoose';
+
+const connectionSchema = new mongoose.Schema({
+  connectionId: { type: String, unique: true, required: true },
+  status: { type: String, enum: ['pending', 'connected', 'disconnected'], default: 'pending' },
   whatsappNumber: String,
   profileInfo: Object,
   sessionData: Object,
-  lastActive: Date,
-  createdAt: Date,
-  updatedAt: Date
-}
+  lastActive: Date
+}, { timestamps: true });
+
+export default mongoose.model('Connection', connectionSchema);
 ```
 
 ---
@@ -182,13 +155,63 @@ src/
 | Event | Description | Action |
 |--------|--------------|--------|
 | `qr` | QR generated | Send QR image to client |
-| `authenticated` | Auth success | Update DB, mark as connected |
+| `authenticated` | Authentication successful | Update DB, mark as connected |
 | `ready` | Client ready | Store profile info |
+| `message` | Message received | Log or forward to webhook |
 | `disconnected` | Session closed | Update DB, clean cache |
 
 ---
 
-## 🧰 Installation & Setup
+## ⚠️ Error Handling
+
+All endpoints return structured error responses:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "SESSION_NOT_FOUND",
+    "message": "No active connection found for this ID"
+  }
+}
+```
+
+### Common Error Codes
+| Code | Description |
+|------|--------------|
+| `INVALID_REQUEST` | Missing or malformed parameters |
+| `SESSION_NOT_FOUND` | Connection ID not found or expired |
+| `WHATSAPP_NOT_READY` | Client not authenticated yet |
+| `MESSAGE_FAILED` | Message delivery failed |
+| `SERVER_ERROR` | Internal server or DB issue |
+
+---
+
+## 🔒 Security
+
+For production:
+- Protect routes using **API Keys** or **JWT Tokens**
+- Validate request origins
+- Securely store session files or data
+- Avoid logging sensitive info like QR codes or messages
+- Restrict access by IP or user role
+
+---
+
+## ⚙️ Scaling & Concurrency
+
+Each WhatsApp client spawns a Chromium instance.
+
+To scale safely:
+- Limit concurrent sessions (recommended ≤ 10 per instance)
+- Use queues like **BullMQ/Redis** for message delivery
+- Use worker processes or containers for horizontal scaling
+- Monitor CPU & memory usage
+- Gracefully handle restarts with persistent session recovery
+
+---
+
+## 🧰 Environment Setup
 
 ```bash
 # Clone repository
@@ -198,33 +221,58 @@ cd whatsapp-api-wrapper
 # Install dependencies
 npm install
 
-# Configure environment variables
+# Configure environment
 cp .env.example .env
 ```
 
 ### .env Example
+
 ```
 MONGO_URI=mongodb://localhost:27017/whatsapp_api
 PORT=5000
 SESSION_DIR=./sessions
 ```
 
+| Variable | Description |
+|-----------|--------------|
+| `MONGO_URI` | MongoDB connection string |
+| `PORT` | Express server port |
+| `SESSION_DIR` | Directory for temporary session cache |
+
 ### Run Server
 ```bash
 npm start
 ```
 
-API will be available at `http://localhost:5000`
+API will be live at: `http://localhost:5000`
+
+---
+
+## 🧪 Testing & Usage
+
+### Example with cURL
+
+```bash
+# Add a number
+curl -X POST http://localhost:5000/wa/add-number
+
+# Send a message
+curl -X POST http://localhost:5000/wa/send/abc123 \
+  -H "Content-Type: application/json" \
+  -d '{"to": "923001234567", "message": "Hello!"}'
+```
+
+You can also import the included Postman collection for easier testing.
 
 ---
 
 ## 🧭 Future Enhancements
 
-- ✅ WebSocket / SSE for real-time message & QR updates  
-- ✅ Message delivery status tracking  
+- ✅ WebSocket / SSE for real-time updates  
+- ✅ Message delivery tracking  
 - ✅ Multi-tenant support with API keys  
+- ✅ Web dashboard for managing sessions  
 - ✅ Role-based access control  
-- ✅ Web dashboard for session monitoring  
 
 ---
 
@@ -234,5 +282,6 @@ API will be available at `http://localhost:5000`
 ---
 
 ## 📝 License
-This project is proprietary and not open-sourced.  
-All rights reserved © 2025 Muhammad Ali.
+This project is **proprietary** and intended for internal or client use under contract.  
+Distribution, resale, or reuse without written permission is prohibited.  
+© 2025 Muhammad Ali.
