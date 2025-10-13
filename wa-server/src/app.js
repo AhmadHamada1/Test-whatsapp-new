@@ -24,7 +24,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Swagger documentation
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
 
 // Routes
 app.use("/", routes);

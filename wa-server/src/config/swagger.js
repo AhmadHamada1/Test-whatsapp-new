@@ -2,7 +2,7 @@
 
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
-const config = require("../env");
+const config = require("./env");
 
 const options = {
   definition: {
