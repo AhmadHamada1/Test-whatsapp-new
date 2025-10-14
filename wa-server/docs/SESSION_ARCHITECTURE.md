@@ -43,22 +43,24 @@ Example Session Entity:
 
 ## Request Flow
 
-1. Client sends a request to the Session Manager API.
-2. Session Manager authenticates and validates the request.
-3. The request is routed to the appropriate worker based on session ID hashing.
-4. Worker processes the request and updates session state.
-5. Session Manager persists updated state to the database/cache.
+1. Client sends a request to the Connection Manager API.
+2. Connection Manager authenticates and validates the request.
+3. The request is routed to the appropriate worker based on connectionId hashing.
+4. Worker processes the request and updates connection state.
+5. Connection Manager persists updated state to the database/cache.
 6. Response is sent back to the client.
 
 ## API Surface
 
-The Session Manager exposes the following APIs:
+The Connection Manager exposes the following APIs:
 
-- `POST /sessions` - Create a new session.
-- `GET /sessions/{session_id}` - Retrieve session details.
-- `PUT /sessions/{session_id}` - Update session state.
-- `DELETE /sessions/{session_id}` - Terminate a session.
-- `POST /sessions/{session_id}/request` - Submit a request to a session.
+| Endpoint                                           | Method | Description                           | Request Example | Response Example |
+|----------------------------------------------------|--------|---------------------------------------|-----------------|-----------------|
+| `/v1/wa/connections/add`                           | POST   | Create a new connection               | ```json<br>{ "userId": "user_456" }<br>``` | ```json<br>{ "connectionId": "conn_789", "status": "connected", "createdAt": "2024-06-01T12:34:56Z" }<br>``` |
+| `/v1/wa/connections/:connectionId/status`          | GET    | Retrieve connection status            | —               | ```json<br>{ "connectionId": "conn_789", "status": "connected", "lastUpdated": "2024-06-01T12:45:00Z" }<br>``` |
+| `/v1/wa/messages/send`                             | POST   | Send a message through a connection   | ```json<br>{ "connectionId": "conn_789", "message": "Hello, world!" }<br>``` | ```json<br>{ "messageId": "msg_123", "status": "sent", "timestamp": "2024-06-01T12:46:00Z" }<br>``` |
+| `/v1/wa/connections/:connectionId/status`          | PUT    | Update connection state               | ```json<br>{ "status": "active" }<br>``` | ```json<br>{ "connectionId": "conn_789", "status": "active", "updatedAt": "2024-06-01T12:47:00Z" }<br>``` |
+| `/v1/wa/connections/:connectionId/disconnect`      | POST   | Terminate a connection                | —               | ```json<br>{ "connectionId": "conn_789", "status": "disconnected", "disconnectedAt": "2024-06-01T12:50:00Z" }<br>``` |
 
 All APIs require authentication tokens and support JSON payloads.
 
@@ -75,24 +77,71 @@ app.use(express.json());
 const sessionStore = new SessionStore();
 const workerPool = new WorkerPool();
 
-app.post('/sessions', async (req, res) => {
-  const session = await sessionStore.createSession(req.body.userId);
-  res.status(201).json(session);
+app.post('/v1/wa/connections/add', async (req, res) => {
+  const connection = await sessionStore.createSession(req.body.userId);
+  res.status(201).json({
+    connectionId: connection.session_id,
+    status: connection.state,
+    createdAt: connection.last_updated,
+  });
 });
 
-app.post('/sessions/:sessionId/request', async (req, res) => {
-  const { sessionId } = req.params;
-  const session = await sessionStore.getSession(sessionId);
-  if (!session) return res.status(404).send('Session not found');
+app.post('/v1/wa/messages/send', async (req, res) => {
+  const { connectionId, message } = req.body;
+  const session = await sessionStore.getSession(connectionId);
+  if (!session) return res.status(404).send('Connection not found');
 
-  const worker = workerPool.getWorkerForSession(sessionId);
-  const result = await worker.processRequest(sessionId, req.body);
-  await sessionStore.updateSession(sessionId, result.updatedState);
+  const worker = workerPool.getWorkerForSession(connectionId);
+  const result = await worker.processRequest(connectionId, { message });
+  await sessionStore.updateSession(connectionId, result.updatedState);
 
-  res.json(result.response);
+  res.json({
+    messageId: result.response.messageId,
+    status: result.response.status,
+    timestamp: result.response.timestamp,
+  });
 });
 
-app.listen(3000, () => console.log('Session Manager running on port 3000'));
+app.get('/v1/wa/connections/:connectionId/status', async (req, res) => {
+  const { connectionId } = req.params;
+  const session = await sessionStore.getSession(connectionId);
+  if (!session) return res.status(404).send('Connection not found');
+
+  res.json({
+    connectionId: session.session_id,
+    status: session.state,
+    lastUpdated: session.last_updated,
+  });
+});
+
+app.put('/v1/wa/connections/:connectionId/status', async (req, res) => {
+  const { connectionId } = req.params;
+  const { status } = req.body;
+  const session = await sessionStore.getSession(connectionId);
+  if (!session) return res.status(404).send('Connection not found');
+
+  await sessionStore.updateSession(connectionId, { state: status });
+  res.json({
+    connectionId,
+    status,
+    updatedAt: new Date().toISOString(),
+  });
+});
+
+app.post('/v1/wa/connections/:connectionId/disconnect', async (req, res) => {
+  const { connectionId } = req.params;
+  const session = await sessionStore.getSession(connectionId);
+  if (!session) return res.status(404).send('Connection not found');
+
+  await sessionStore.updateSession(connectionId, { state: 'disconnected' });
+  res.json({
+    connectionId,
+    status: 'disconnected',
+    disconnectedAt: new Date().toISOString(),
+  });
+});
+
+app.listen(3000, () => console.log('Connection Manager running on port 3000'));
 ```
 
 ## Worker Layout
