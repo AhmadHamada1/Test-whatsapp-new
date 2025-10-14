@@ -62,7 +62,52 @@ The Connection Manager exposes the following APIs:
 | `/v1/wa/connections/:connectionId/status`          | PUT    | Update connection state               | ```json<br>{ "status": "active" }<br>``` | ```json<br>{ "connectionId": "conn_789", "status": "active", "updatedAt": "2024-06-01T12:47:00Z" }<br>``` |
 | `/v1/wa/connections/:connectionId/disconnect`      | POST   | Terminate a connection                | —               | ```json<br>{ "connectionId": "conn_789", "status": "disconnected", "disconnectedAt": "2024-06-01T12:50:00Z" }<br>``` |
 
+
 All APIs require authentication tokens and support JSON payloads.
+
+## Session Manager Singleton Class
+
+The Session Manager is typically implemented as a singleton class to ensure that only one instance of the manager exists throughout the application lifecycle. This design guarantees centralized management of sessions, consistent state, and prevents conflicting updates from multiple manager instances.
+
+The singleton pattern is achieved by making the constructor private and exposing a static `getInstance()` method. This method either creates the instance (if it doesn't exist) or returns the existing one. The singleton `SessionManager` holds references to the `SessionStore` (for session persistence) and `WorkerPool` (for request processing), and exposes methods to interact with connection APIs.
+
+### Example Implementation
+
+```typescript
+export class SessionManager {
+  private static instance: SessionManager;
+  private sessionStore: SessionStore;
+  private workerPool: WorkerPool;
+
+  private constructor() {
+    this.sessionStore = new SessionStore();
+    this.workerPool = new WorkerPool();
+  }
+
+  static getInstance(): SessionManager {
+    if (!SessionManager.instance) {
+      SessionManager.instance = new SessionManager();
+    }
+    return SessionManager.instance;
+  }
+
+  async handleConnection(userId: string) {
+    const connection = await this.sessionStore.createSession(userId);
+    return connection;
+  }
+
+  async handleMessageSend(connectionId: string, message: string) {
+    const session = await this.sessionStore.getSession(connectionId);
+    if (!session) throw new Error('Connection not found');
+    const worker = this.workerPool.getWorkerForSession(connectionId);
+    const result = await worker.processRequest(connectionId, { message });
+    await this.sessionStore.updateSession(connectionId, result.updatedState);
+    return result.response;
+  }
+}
+```
+
+**Benefits:** Using a singleton for the Session Manager provides centralized control, reduces resource duplication, and simplifies scaling and coordination across the application.
 
 ## Session Manager Code Example
 
