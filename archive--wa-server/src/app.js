@@ -4,9 +4,9 @@ const express = require("express");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const cors = require("./config/cors");
-const { errorHandler } = require("./middlewares/errorHandler");
+const { errorHandler } = require("./middleware/errorHandler");
 const { specs, swaggerUi, swaggerOptions } = require("./config/swagger");
-const healthRouter = require("./modules/health/router");
+const routes = require("./routes");
 
 const app = express();
 
@@ -27,8 +27,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
 
 // Routes
-app.use("/health", healthRouter);
-// app.use("/wa", waRouter);
+app.use("/", routes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

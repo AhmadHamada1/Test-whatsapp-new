@@ -1,6 +1,7 @@
 "use strict";
 
 const cors = require("cors");
+const config = require("./env");
 
 const corsOptions = {
   origin: "*",

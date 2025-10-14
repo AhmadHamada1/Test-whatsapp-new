@@ -4,12 +4,19 @@ require("dotenv").config();
 
 const app = require("./app");
 const { connectToDatabase } = require("./config/db");
+const { restoreExistingConnections, cleanupDisconnectedSessions } = require("./services/wa.service");
 const config = require("./config/env");
 
 async function startServer() {
   try {
     // Connect to database
     await connectToDatabase(config.MONGODB_URI);
+    
+    // Restore existing WhatsApp connections
+    await restoreExistingConnections();
+    
+    // Start cleanup interval for disconnected sessions
+    setInterval(cleanupDisconnectedSessions, 5 * 60 * 1000); // Every 5 minutes
     
     // Start the server
     const server = app.listen(config.PORT, () => {
