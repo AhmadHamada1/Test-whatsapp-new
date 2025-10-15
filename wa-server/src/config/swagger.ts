@@ -156,7 +156,8 @@ const options: swaggerJsdoc.Options = {
     }
   },
   apis: [
-    "./src/modules/**/*.js",
+    "./src/modules/**/*.ts",
+    "./dist/modules/**/*.js"
   ]
 };
 

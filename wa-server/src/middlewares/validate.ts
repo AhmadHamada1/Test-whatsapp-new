@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError, ZodSchema } from 'zod';
 
-export function validate(schema: ZodSchema, source: keyof Request = 'body') {
+export function validate(schema: ZodSchema, source: 'body' | 'query' | 'params' = 'body') {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
       if (schema && typeof schema.parse === 'function') {
-        req[source] = schema.parse(req[source]);
+        (req as any)[source] = schema.parse((req as any)[source]);
       }
       next();
     } catch (err) {
