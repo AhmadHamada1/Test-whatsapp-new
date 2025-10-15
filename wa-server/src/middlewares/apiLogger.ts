@@ -1,7 +1,7 @@
-"use strict";
+import { Request, Response, NextFunction } from 'express';
 
-function createApiLogger() {
-  return async (req, res, next) => {
+export function createApiLogger() {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const startTime = Date.now();
     
     // Log the API call when response is sent
@@ -23,5 +23,3 @@ function createApiLogger() {
     next();
   };
 }
-
-module.exports = { createApiLogger };

@@ -1,10 +1,8 @@
-"use strict";
+import swaggerJsdoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
+import config from "./env";
 
-const swaggerJsdoc = require("swagger-jsdoc");
-const swaggerUi = require("swagger-ui-express");
-const config = require("./env");
-
-const options = {
+const options: swaggerJsdoc.Options = {
   definition: {
     openapi: "3.0.0",
     info: {
@@ -164,17 +162,19 @@ const options = {
 
 const specs = swaggerJsdoc(options);
 
-module.exports = {
+const swaggerOptions = {
+  explorer: true,
+  swaggerOptions: {
+    docExpansion: "none",
+    filter: true,
+    showRequestHeaders: true,
+    showCommonExtensions: true,
+    tryItOutEnabled: true
+  }
+};
+
+export {
   specs,
   swaggerUi,
-  swaggerOptions: {
-    explorer: true,
-    swaggerOptions: {
-      docExpansion: "none",
-      filter: true,
-      showRequestHeaders: true,
-      showCommonExtensions: true,
-      tryItOutEnabled: true
-    }
-  }
+  swaggerOptions
 };

@@ -1,16 +1,14 @@
-"use strict";
-
-const express = require("express");
-const {
+import { Router } from "express";
+import {
   addConnection,
   sendMessage,
   getConnectionStatus,
   updateConnectionStatus,
   disconnectConnection
-} = require("./controller");
-const { requireApiKey } = require("../../middlewares/requireApiKey");
+} from "./controller";
+import { requireApiKey } from "../../middlewares/requireApiKey";
 
-const router = express.Router();
+const router = Router();
 
 /**
  * @swagger
@@ -67,7 +65,7 @@ router.post('/connections/add', requireApiKey, addConnection);
 
 /**
  * @swagger
- * /connections/{connectionId}/status:
+ * /v1/wa/connections/{connectionId}/status:
  *   get:
  *     summary: Get connection status
  *     description: Retrieves the current status of a WhatsApp connection
@@ -335,4 +333,4 @@ router.post('/connections/:connectionId/disconnect', requireApiKey, disconnectCo
  */
 router.post('/messages/send', requireApiKey, sendMessage);
 
-module.exports = router;
+export default router;

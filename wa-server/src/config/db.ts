@@ -1,8 +1,6 @@
-"use strict";
+import mongoose from "mongoose";
 
-const mongoose = require("mongoose");
-
-async function connectToDatabase(mongoUri) {
+export async function connectToDatabase(mongoUri: string): Promise<void> {
   if (!mongoUri) {
     console.warn("MONGODB_URI not set; skipping database connection");
     return;
@@ -12,5 +10,3 @@ async function connectToDatabase(mongoUri) {
   await mongoose.connect(mongoUri);
   console.log("MongoDB connected");
 }
-
-module.exports = { connectToDatabase };

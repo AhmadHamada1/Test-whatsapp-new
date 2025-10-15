@@ -1,8 +1,6 @@
-"use strict";
+import { Router, Request, Response } from "express";
 
-const express = require("express");
-
-const router = express.Router();
+const router = Router();
 
 /**
  * @swagger
@@ -23,8 +21,8 @@ const router = express.Router();
  *                   type: string
  *                   example: "it is working"
  */
-router.get("/", (req, res) => {
+router.get("/", (req: Request, res: Response) => {
   res.json({ message: "it is working" });
 });
 
-module.exports = router;
+export default router;

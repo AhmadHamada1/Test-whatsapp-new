@@ -1,14 +1,12 @@
-"use strict";
+import express, { Application } from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import cors from "./config/cors";
+import { errorHandler } from "./middlewares/errorHandler";
+import { specs, swaggerUi, swaggerOptions } from "./config/swagger";
+import mainRouter from "./router";
 
-const express = require("express");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const cors = require("./config/cors");
-const { errorHandler } = require("./middlewares/errorHandler");
-const { specs, swaggerUi, swaggerOptions } = require("./config/swagger");
-const mainRouter = require("./router");
-
-const app = express();
+const app: Application = express();
 
 // Security middleware
 app.use(helmet());
@@ -32,4 +30,4 @@ app.use("/", mainRouter);
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-module.exports = app;
+export default app;

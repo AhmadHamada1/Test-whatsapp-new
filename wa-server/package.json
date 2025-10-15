@@ -4,11 +4,15 @@
   "description": "WhatsApp Web Bot Server - Handles WhatsApp connections and messaging",
   "author": "",
   "license": "UNLICENSED",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "NODE_ENV=test jest",
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "start": "npm run build && node dist/index.js",
+    "dev": "npm run dev:ts",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "start:ts": "npm run build && node dist/index.js",
+    "dev:ts": "tsc --watch & nodemon dist/index.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -25,11 +29,19 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/helmet": "^0.0.48",
     "@types/jest": "^30.0.0",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^24.7.2",
     "@types/supertest": "^6.0.3",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "jest": "^30.2.0",
     "nodemon": "^3.0.1",
-    "supertest": "^7.1.4"
+    "supertest": "^7.1.4",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=18.0.0"
