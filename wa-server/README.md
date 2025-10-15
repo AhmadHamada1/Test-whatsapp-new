@@ -197,22 +197,54 @@ Once the server is running, visit:
 
 ### Using Docker
 
-1. **Create Dockerfile**:
-   ```dockerfile
-   FROM node:18-alpine
-   WORKDIR /app
-   COPY package*.json ./
-   RUN npm ci --only=production
-   COPY dist/ ./dist/
-   EXPOSE 4001
-   CMD ["node", "dist/index.js"]
+#### Production Deployment
+
+1. **Set up environment variables**:
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+   
+   # Edit .env with your actual values
+   nano .env
    ```
 
-2. **Build and run**:
+2. **Build and run with Docker Compose**:
    ```bash
-   docker build -t wa-server .
-   docker run -p 4001:4001 wa-server
+   # Build and start the service
+   docker-compose up -d
+   
+   # View logs
+   docker-compose logs -f
+   
+   # Stop the service
+   docker-compose down
    ```
+
+3. **Or build and run manually**:
+   ```bash
+   # Build the image
+   docker build -t wa-server .
+   
+   # Run the container
+   docker run -d \
+     --name wa-server \
+     -p 4001:4001 \
+     -e MONGODB_URI=your-mongodb-url \
+     -e API_KEY_SECRET=your-secret-key \
+     -v wa-sessions:/app/.wwebjs_auth \
+     -v wa-cache:/app/.wwebjs_cache \
+     wa-server
+   ```
+
+#### Development with Docker
+
+```bash
+# Run in development mode with hot reload
+docker-compose -f docker-compose.dev.yml up -d
+
+# View logs
+docker-compose -f docker-compose.dev.yml logs -f
+```
 
 ## 🔍 Monitoring
 
