@@ -1,7 +1,7 @@
 "use strict";
 
 const { sha256 } = require("../utils/crypto");
-const { ApiKey } = require("../models/api-keys.model");
+const { ApiKey } = require("../modules/api-key/model");
 
 async function requireApiKey(req, res, next) {
   try {
