@@ -21,7 +21,7 @@ export interface Connection {
   name?: string;
 }
 
-export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
+export type ConnectionStatus = "requesting_qr" | "waiting_connection" | "connected" | "disconnected" | "error";
 
 // Message Types
 export interface Message {
@@ -57,9 +57,10 @@ export interface SendMessageRequest {
 
 // Express Request/Response Extensions
 import { Request } from "express";
+import { IApiKey } from "../modules/api-key/model";
 
 export interface AuthenticatedRequest extends Request {
-  apiKey?: string;
+  apiKey?: IApiKey;
 }
 
 // Environment Configuration

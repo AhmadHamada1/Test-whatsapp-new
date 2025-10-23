@@ -1,11 +1,12 @@
 import * as dotenv from "dotenv";
+
+// Load environment variables FIRST
+dotenv.config();
+
 import { Server } from "http";
 import app from "./app";
 import { connectToDatabase } from "./config/db";
 import config from "./config/env";
-
-// Load environment variables
-dotenv.config();
 
 async function startServer(): Promise<void> {
   try {

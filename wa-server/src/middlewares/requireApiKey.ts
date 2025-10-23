@@ -15,17 +15,49 @@ export async function requireApiKey(
     }
 
     const tokenHash = sha256(headerKey);
-    const apiKey = await ApiKey.findOne({ tokenHash, status: "active" });
+    
+    // Add timeout and better error handling for database query
+    const apiKey = await ApiKey.findOne({ tokenHash, status: "active" })
+      .maxTimeMS(5000) // 5 second timeout
+      .lean(); // Use lean() for better performance
+    
     if (!apiKey) {
       return next({ status: 401, message: "Invalid or inactive API key" });
     }
 
-    apiKey.usageCount = (apiKey.usageCount || 0) + 1;
-    apiKey.lastUsedAt = new Date();
-    await apiKey.save();
+    // Update usage count asynchronously to avoid blocking the request
+    ApiKey.findByIdAndUpdate(
+      apiKey._id,
+      { 
+        $inc: { usageCount: 1 },
+        lastUsedAt: new Date()
+      }
+    ).catch(err => {
+      console.error('Failed to update API key usage:', err);
+    });
+
+    // Convert lean document to full document for compatibility
     req.apiKey = apiKey as any;
     next();
   } catch (err) {
+    console.error('API key validation error:', err);
+    
+    // Handle specific MongoDB timeout errors
+    if (err instanceof Error && err.message.includes('buffering timed out')) {
+      return next({ 
+        status: 503, 
+        message: "Database temporarily unavailable. Please try again later." 
+      });
+    }
+    
+    // Handle other database errors
+    if (err instanceof Error && err.message.includes('MongoError')) {
+      return next({ 
+        status: 503, 
+        message: "Database error. Please try again later." 
+      });
+    }
+    
     next(err);
   }
 }

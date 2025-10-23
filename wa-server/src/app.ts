@@ -22,12 +22,11 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Swagger documentation
-app.use("/docs", swaggerUi.serve);
 app.get("/docs/swagger.json", (req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(specs);
 });
-app.use("/docs", swaggerUi.setup(specs, swaggerOptions));
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
 
 // Routes
 app.use("/", mainRouter);

@@ -4,8 +4,9 @@ import {
   sendMessage,
   getConnectionStatus,
   updateConnectionStatus,
-  disconnectConnection
-} from "./controller";
+  disconnectConnection,
+  listConnections,
+} from "./controllers";
 import { requireApiKey } from "../../middlewares/requireApiKey";
 
 const router = Router();
@@ -65,7 +66,45 @@ router.post('/connections/add', requireApiKey, addConnection);
 
 /**
  * @swagger
- * /v1/wa/connections/{connectionId}/status:
+ * /v1/wa/connections:
+ *   get:
+ *     summary: List all connections
+ *     description: Retrieves all WhatsApp connections associated with the API key
+ *     tags: [Connections]
+ *     security:
+ *       - apiKeyAuth: []
+ *     responses:
+ *       200:
+ *         description: Connections retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Connection'
+ *       401:
+ *         description: Unauthorized - Invalid API key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/connections', requireApiKey, listConnections);
+
+/**
+ * @swagger
+ * /v1/wa/connections/{id}/status:
  *   get:
  *     summary: Get connection status
  *     description: Retrieves the current status of a WhatsApp connection
@@ -74,12 +113,12 @@ router.post('/connections/add', requireApiKey, addConnection);
  *       - apiKeyAuth: []
  *     parameters:
  *       - in: path
- *         name: connectionId
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
  *         description: Unique identifier for the connection
- *         example: "conn_123456789"
+ *         example: "507f1f77bcf86cd799439011"
  *     responses:
  *       200:
  *         description: Connection status retrieved successfully
@@ -117,11 +156,11 @@ router.post('/connections/add', requireApiKey, addConnection);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/connections/:connectionId/status', requireApiKey, getConnectionStatus);
+router.get('/connections/:id/status', requireApiKey, getConnectionStatus);
 
 /**
  * @swagger
- * /v1/wa/connections/{connectionId}/status:
+ * /v1/wa/connections/{id}/status:
  *   put:
  *     summary: Update connection status
  *     description: Updates the status of a WhatsApp connection
@@ -130,12 +169,12 @@ router.get('/connections/:connectionId/status', requireApiKey, getConnectionStat
  *       - apiKeyAuth: []
  *     parameters:
  *       - in: path
- *         name: connectionId
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
  *         description: Unique identifier for the connection
- *         example: "conn_123456789"
+ *         example: "507f1f77bcf86cd799439011"
  *     requestBody:
  *       required: true
  *       content:
@@ -187,11 +226,11 @@ router.get('/connections/:connectionId/status', requireApiKey, getConnectionStat
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/connections/:connectionId/status', requireApiKey, updateConnectionStatus);
+router.put('/connections/:id/status', requireApiKey, updateConnectionStatus);
 
 /**
  * @swagger
- * /v1/wa/connections/{connectionId}/disconnect:
+ * /v1/wa/connections/{id}/disconnect:
  *   post:
  *     summary: Disconnect a WhatsApp connection
  *     description: Disconnects and removes a WhatsApp connection
@@ -200,12 +239,12 @@ router.put('/connections/:connectionId/status', requireApiKey, updateConnectionS
  *       - apiKeyAuth: []
  *     parameters:
  *       - in: path
- *         name: connectionId
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
  *         description: Unique identifier for the connection
- *         example: "conn_123456789"
+ *         example: "507f1f77bcf86cd799439011"
  *     responses:
  *       200:
  *         description: Connection disconnected successfully
@@ -250,7 +289,7 @@ router.put('/connections/:connectionId/status', requireApiKey, updateConnectionS
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/connections/:connectionId/disconnect', requireApiKey, disconnectConnection);
+router.post('/connections/:id/disconnect', requireApiKey, disconnectConnection);
 
 /**
  * @swagger
