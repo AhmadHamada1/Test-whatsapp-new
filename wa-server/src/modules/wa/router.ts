@@ -50,7 +50,7 @@ router.get('/connections', requireApiKey, listConnections);
 
 /**
  * @swagger
- * /v1/wa/connections/{id}/status:
+ * /v1/wa/connections/{id}:
  *   get:
  *     summary: Get connection status
  *     description: Retrieves the current status of a WhatsApp connection
@@ -102,11 +102,11 @@ router.get('/connections', requireApiKey, listConnections);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/connections/:id/status', requireApiKey, getConnectionStatus);
+router.get('/connections/:id', requireApiKey, getConnectionStatus);
 
 /**
  * @swagger
- * /v1/wa/connections/add:
+ * /v1/wa/connections:
  *   post:
  *     summary: Create a new WhatsApp connection
  *     description: Initiates a new WhatsApp Web connection and returns a QR code for authentication
@@ -155,11 +155,11 @@ router.get('/connections/:id/status', requireApiKey, getConnectionStatus);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/connections/add', requireApiKey, addConnection);
+router.post('/connections', requireApiKey, addConnection);
 
 /**
  * @swagger
- * /v1/wa/connections/{id}/disconnect:
+ * /v1/wa/connections/{id}:
  *   delete:
  *     summary: Disconnect a WhatsApp connection
  *     description: Disconnects and removes a WhatsApp connection
@@ -218,11 +218,11 @@ router.post('/connections/add', requireApiKey, addConnection);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/connections/:id/disconnect', requireApiKey, disconnectConnection);
+router.delete('/connections/:id', requireApiKey, disconnectConnection);
 
 /**
  * @swagger
- * /v1/wa/messages/send:
+ * /v1/wa/connections/{id}/message:
  *   post:
  *     summary: Send a WhatsApp message
  *     description: Sends a message through a WhatsApp connection
@@ -299,6 +299,6 @@ router.delete('/connections/:id/disconnect', requireApiKey, disconnectConnection
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/messages/send', requireApiKey, sendMessage);
+router.post('/connections/:id/message', requireApiKey, sendMessage);
 
 export default router;

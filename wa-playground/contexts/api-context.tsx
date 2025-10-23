@@ -1,0 +1,104 @@
+"use client"
+
+import type React from "react"
+import { createContext, useContext, useState, useEffect } from "react"
+import type { ApiContextType, Connection, Message, MessageStatus } from "@/lib/types"
+
+const ApiContext = createContext<ApiContextType | undefined>(undefined)
+
+export function ApiProvider({ children }: { children: React.ReactNode }) {
+  const [apiKey, setApiKeyState] = useState<string | null>(null)
+  const [connections, setConnections] = useState<Connection[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const storedApiKey = localStorage.getItem("api_key")
+    const storedConnections = localStorage.getItem("connections")
+    const storedMessages = localStorage.getItem("messages")
+
+    if (storedApiKey) setApiKeyState(storedApiKey)
+    if (storedConnections) setConnections(JSON.parse(storedConnections))
+    if (storedMessages) setMessages(JSON.parse(storedMessages))
+  }, [])
+
+  const setApiKey = (key: string) => {
+    setApiKeyState(key)
+    localStorage.setItem("api_key", key)
+  }
+
+  const addConnection = (connection: Omit<Connection, "id" | "createdAt">) => {
+    const newConnection: Connection = {
+      ...connection,
+      id: Math.random().toString(36).substring(7),
+      createdAt: new Date().toISOString(),
+    }
+    const updatedConnections = [...connections, newConnection]
+    setConnections(updatedConnections)
+    localStorage.setItem("connections", JSON.stringify(updatedConnections))
+  }
+
+  const disconnectConnection = (id: string) => {
+    const updatedConnections = connections.map((conn) =>
+      conn.id === id ? { ...conn, status: "disconnected" as const } : conn,
+    )
+    setConnections(updatedConnections)
+    localStorage.setItem("connections", JSON.stringify(updatedConnections))
+  }
+
+  const sendMessage = (connectionId: string, phoneNumber: string, message: string) => {
+    const newMessage: Message = {
+      id: Math.random().toString(36).substring(7),
+      connectionId,
+      phoneNumber,
+      message,
+      status: "pending",
+      timestamp: new Date().toISOString(),
+    }
+
+    const updatedMessages = [...messages, newMessage]
+    setMessages(updatedMessages)
+    localStorage.setItem("messages", JSON.stringify(updatedMessages))
+
+    // Simulate message status updates
+    setTimeout(() => {
+      const statuses: MessageStatus[] = ["sent", "delivered", "failed"]
+      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)]
+
+      const finalMessages = updatedMessages.map((msg) =>
+        msg.id === newMessage.id ? { ...msg, status: randomStatus } : msg,
+      )
+      setMessages(finalMessages)
+      localStorage.setItem("messages", JSON.stringify(finalMessages))
+    }, 2000)
+  }
+
+  const getMessagesByConnection = (connectionId: string) => {
+    return messages.filter((msg) => msg.connectionId === connectionId)
+  }
+
+  return (
+    <ApiContext.Provider
+      value={{
+        apiKey,
+        setApiKey,
+        connections,
+        addConnection,
+        disconnectConnection,
+        messages,
+        sendMessage,
+        getMessagesByConnection,
+      }}
+    >
+      {children}
+    </ApiContext.Provider>
+  )
+}
+
+export function useApi() {
+  const context = useContext(ApiContext)
+  if (context === undefined) {
+    throw new Error("useApi must be used within an ApiProvider")
+  }
+  return context
+}

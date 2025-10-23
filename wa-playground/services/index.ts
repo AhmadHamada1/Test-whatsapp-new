@@ -1,0 +1,5 @@
+export { getConnections } from './get-connections'
+export { addNewConnection } from './add-new-connection'
+export { sendMessage } from './send-message'
+export { getConnectionStatus } from './get-connection-status'
+export { disconnectConnection } from './disconnection-connection'
