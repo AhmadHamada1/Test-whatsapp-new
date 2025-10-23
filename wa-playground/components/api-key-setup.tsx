@@ -8,16 +8,33 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useApi } from "@/contexts/api-context"
-import { Key } from "lucide-react"
+import { Key, Loader2, CheckCircle, XCircle } from "lucide-react"
+import { verifyApiKey } from "@/services/verify-api-key"
 
 export function ApiKeySetup() {
   const { setApiKey } = useApi()
   const [inputKey, setInputKey] = useState("")
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (inputKey.trim()) {
+    if (!inputKey.trim()) return
+
+    setIsVerifying(true)
+    setVerificationStatus('idle')
+    setErrorMessage("")
+
+    try {
+      await verifyApiKey(inputKey.trim())
+      setVerificationStatus('success')
       setApiKey(inputKey.trim())
+    } catch (error) {
+      setVerificationStatus('error')
+      setErrorMessage('Failed to verify API key')
+    } finally {
+      setIsVerifying(false)
     }
   }
 
@@ -37,17 +54,49 @@ export function ApiKeySetup() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="apiKey">API Key</Label>
-              <Input
-                id="apiKey"
-                type="password"
-                placeholder="Enter your API key"
-                value={inputKey}
-                onChange={(e) => setInputKey(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="apiKey"
+                  type="password"
+                  placeholder="Enter your API key"
+                  value={inputKey}
+                  onChange={(e) => setInputKey(e.target.value)}
+                  required
+                  disabled={isVerifying}
+                  className={verificationStatus === 'error' ? 'border-red-500' : verificationStatus === 'success' ? 'border-green-500' : ''}
+                />
+                {isVerifying && (
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+                {verificationStatus === 'success' && !isVerifying && (
+                  <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
+                )}
+                {verificationStatus === 'error' && !isVerifying && (
+                  <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
+                )}
+              </div>
+              {verificationStatus === 'error' && errorMessage && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <XCircle className="h-3 w-3" />
+                  {errorMessage}
+                </p>
+              )}
+              {verificationStatus === 'success' && (
+                <p className="text-sm text-green-500 flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  API key verified successfully!
+                </p>
+              )}
             </div>
-            <Button type="submit" className="w-full">
-              Continue
+            <Button type="submit" className="w-full" disabled={isVerifying}>
+              {isVerifying ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                'Continue'
+              )}
             </Button>
           </form>
         </CardContent>

@@ -17,12 +17,8 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   // Load data from localStorage on mount
   useEffect(() => {
     const storedApiKey = localStorage.getItem("api_key")
-    const storedConnections = localStorage.getItem("connections")
-    const storedMessages = localStorage.getItem("messages")
-
     if (storedApiKey) setApiKeyState(storedApiKey)
-    if (storedConnections) setConnections(JSON.parse(storedConnections))
-    if (storedMessages) setMessages(JSON.parse(storedMessages))
+    loadConnections()
   }, [])
 
   const setApiKey = (key: string) => {
@@ -30,10 +26,10 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("api_key", key)
   }
 
-  const addConnection = (connection: Omit<Connection, "id" | "createdAt">) => {
+  const addConnection = (connection: Omit<Connection, "connectionId" | "createdAt">) => {
     const newConnection: Connection = {
       ...connection,
-      id: Math.random().toString(36).substring(7),
+      connectionId: Math.random().toString(36).substring(7),
       createdAt: new Date().toISOString(),
     }
     const updatedConnections = [...connections, newConnection]
@@ -48,9 +44,9 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("connections", JSON.stringify(updatedConnections))
   }
 
-  const disconnectConnection = (id: string) => {
+  const disconnectConnection = (connectionId: string) => {
     const updatedConnections = connections.map((conn) =>
-      conn.id === id ? { ...conn, status: "disconnected" as const } : conn,
+      conn.connectionId === connectionId ? { ...conn, status: "disconnected" as const } : conn,
     )
     setConnections(updatedConnections)
     localStorage.setItem("connections", JSON.stringify(updatedConnections))
@@ -58,12 +54,13 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
 
   const sendMessage = (connectionId: string, phoneNumber: string, message: string) => {
     const newMessage: Message = {
-      id: Math.random().toString(36).substring(7),
+      messageId: Math.random().toString(36).substring(7),
       connectionId,
-      phoneNumber,
-      message,
+      to: phoneNumber,
+      content: message,
+      type: "text",
       status: "pending",
-      timestamp: new Date().toISOString(),
+      sentAt: new Date().toISOString(),
     }
 
     const updatedMessages = [...messages, newMessage]
@@ -76,7 +73,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       const randomStatus = statuses[Math.floor(Math.random() * statuses.length)]
 
       const finalMessages = updatedMessages.map((msg) =>
-        msg.id === newMessage.id ? { ...msg, status: randomStatus } : msg,
+        msg.messageId === newMessage.messageId ? { ...msg, status: randomStatus } : msg,
       )
       setMessages(finalMessages)
       localStorage.setItem("messages", JSON.stringify(finalMessages))
@@ -93,9 +90,10 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
     
     try {
       const fetchedConnections = await getConnections()
+      console.log('Fetched connections:', fetchedConnections)
       setConnections(fetchedConnections)
-      localStorage.setItem("connections", JSON.stringify(fetchedConnections))
     } catch (error) {
+      alert('Failed to load connections')
       console.error('Failed to load connections:', error)
       setConnectionsError(error instanceof Error ? error.message : 'Failed to load connections')
       // Keep existing connections from localStorage if API fails

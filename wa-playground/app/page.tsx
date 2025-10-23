@@ -21,7 +21,7 @@ export default function Home() {
     if (apiKey) {
       loadConnections()
     }
-  }, [apiKey, loadConnections])
+  }, [apiKey])
 
   if (!apiKey) {
     return <ApiKeySetup />

@@ -24,13 +24,16 @@ export async function getConnections(): Promise<Connection[]> {
       throw new Error(response.data.message || 'Failed to fetch connections')
     }
 
+    console.log('Response data:', response.data)
+
     // Transform API response to our Connection type
     const connections: Connection[] = response.data.data.map(apiConnection => ({
-      id: apiConnection.connectionId,
-      deviceName: apiConnection.name || 'Unnamed Connection',
+      connectionId: apiConnection.connectionId,
       status: apiConnection.status as Connection['status'],
       qrCode: apiConnection.qrCode,
       createdAt: apiConnection.createdAt,
+      lastActivity: apiConnection.lastActivity,
+      name: apiConnection.name,
     }))
 
     return connections

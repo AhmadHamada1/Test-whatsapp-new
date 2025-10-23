@@ -24,7 +24,7 @@ export function SendMessageDialog({ connectionId, open, onOpenChange }: SendMess
   const [phoneNumber, setPhoneNumber] = useState("")
   const [message, setMessage] = useState("")
 
-  const connection = connections.find((c) => c.id === connectionId)
+  const connection = connections.find((c) => c.connectionId === connectionId)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,7 +45,7 @@ export function SendMessageDialog({ connectionId, open, onOpenChange }: SendMess
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Send Message</DialogTitle>
-          <DialogDescription>Send a message via {connection?.deviceName}</DialogDescription>
+          <DialogDescription>Send a message via {connection?.name || "Unnamed Connection"}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

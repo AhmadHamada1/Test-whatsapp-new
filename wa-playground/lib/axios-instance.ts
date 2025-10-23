@@ -1,8 +1,11 @@
 import axios, { AxiosInstance } from 'axios'
 
+export const baseURL = 'http://localhost:4001'
+const waPrefix = `v1/wa`
+
 // Create axios instance with default configuration
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: 'http://localhost:4001/v1/wa',
+  baseURL: `${baseURL}/${waPrefix}`,
   timeout: 10000, // 10 seconds timeout
   headers: {
     'Content-Type': 'application/json',

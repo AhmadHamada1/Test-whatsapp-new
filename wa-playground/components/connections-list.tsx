@@ -27,8 +27,12 @@ export function ConnectionsList({ onSendMessage, onViewMessages }: ConnectionsLi
         return "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
       case "disconnected":
         return "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
-      case "pending":
+      case "requesting_qr":
+        return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
+      case "waiting_connection":
         return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20"
+      case "error":
+        return "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
     }
   }
 
@@ -81,7 +85,7 @@ export function ConnectionsList({ onSendMessage, onViewMessages }: ConnectionsLi
   return (
     <div className="space-y-4">
       {connections.map((connection) => (
-        <Card key={connection.id}>
+        <Card key={connection.connectionId}>
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
@@ -89,14 +93,14 @@ export function ConnectionsList({ onSendMessage, onViewMessages }: ConnectionsLi
                   <Smartphone className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">{connection.deviceName}</CardTitle>
+                  <CardTitle className="text-lg">{connection.name || "Unnamed Connection"}</CardTitle>
                   <CardDescription>
-                    {connection.deviceDetail || "Waiting for device to scan QR code..."}
+                    {connection.lastActivity ? `Last active: ${new Date(connection.lastActivity).toLocaleString()}` : "Waiting for device to scan QR code..."}
                   </CardDescription>
                 </div>
               </div>
               <Badge variant="outline" className={getStatusColor(connection.status)}>
-                {connection.status}
+                {connection.status.replace('_', ' ')}
               </Badge>
             </div>
           </CardHeader>
@@ -104,25 +108,28 @@ export function ConnectionsList({ onSendMessage, onViewMessages }: ConnectionsLi
             <div className="flex flex-wrap gap-2">
               {connection.status === "connected" && (
                 <>
-                  <Button size="sm" variant="outline" onClick={() => onSendMessage(connection.id)}>
+                  <Button size="sm" variant="outline" onClick={() => onSendMessage(connection.connectionId)}>
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Send Message
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => onViewMessages(connection.id)}>
+                  <Button size="sm" variant="outline" onClick={() => onViewMessages(connection.connectionId)}>
                     <History className="h-4 w-4 mr-2" />
                     View Messages
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => disconnectConnection(connection.id)}>
+                  <Button size="sm" variant="outline" onClick={() => disconnectConnection(connection.connectionId)}>
                     <Power className="h-4 w-4 mr-2" />
                     Disconnect
                   </Button>
                 </>
               )}
-              {connection.status === "pending" && (
+              {(connection.status === "requesting_qr" || connection.status === "waiting_connection") && (
                 <p className="text-sm text-muted-foreground">Scan QR code to activate this connection</p>
               )}
               {connection.status === "disconnected" && (
                 <p className="text-sm text-muted-foreground">Connection inactive</p>
+              )}
+              {connection.status === "error" && (
+                <p className="text-sm text-muted-foreground">Connection error - please try reconnecting</p>
               )}
             </div>
           </CardContent>
