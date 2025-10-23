@@ -4,6 +4,7 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 import type { ApiContextType, Connection, Message, MessageStatus } from "@/lib/types"
 import { getConnections } from "@/services/get-connections"
+import { sendMessage as sendMessageApi } from "@/services/send-message"
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined)
 
@@ -13,6 +14,8 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoadingConnections, setIsLoadingConnections] = useState(false)
   const [connectionsError, setConnectionsError] = useState<string | null>(null)
+  const [isSendingMessage, setIsSendingMessage] = useState(false)
+  const [sendMessageError, setSendMessageError] = useState<string | null>(null)
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -52,32 +55,34 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("connections", JSON.stringify(updatedConnections))
   }
 
-  const sendMessage = (connectionId: string, phoneNumber: string, message: string) => {
-    const newMessage: Message = {
-      messageId: Math.random().toString(36).substring(7),
-      connectionId,
-      to: phoneNumber,
-      content: message,
-      type: "text",
-      status: "pending",
-      sentAt: new Date().toISOString(),
+  const sendMessage = async (connectionId: string, phoneNumber: string, message: string) => {
+    if (!apiKey) {
+      setSendMessageError("API key is required to send messages")
+      return
     }
 
-    const updatedMessages = [...messages, newMessage]
-    setMessages(updatedMessages)
-    localStorage.setItem("messages", JSON.stringify(updatedMessages))
+    setIsSendingMessage(true)
+    setSendMessageError(null)
 
-    // Simulate message status updates
-    setTimeout(() => {
-      const statuses: MessageStatus[] = ["sent", "delivered", "failed"]
-      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)]
-
-      const finalMessages = updatedMessages.map((msg) =>
-        msg.messageId === newMessage.messageId ? { ...msg, status: randomStatus } : msg,
-      )
-      setMessages(finalMessages)
-      localStorage.setItem("messages", JSON.stringify(finalMessages))
-    }, 2000)
+    try {
+      // Call the real API
+      const sentMessage = await sendMessageApi(connectionId, phoneNumber, message)
+      
+      // Add the message to local state
+      const updatedMessages = [...messages, sentMessage]
+      setMessages(updatedMessages)
+      localStorage.setItem("messages", JSON.stringify(updatedMessages))
+      
+      return sentMessage
+    } catch (error) {
+      console.log("Error sending message:", error.response.data.message)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send message'
+      setSendMessageError(errorMessage)
+      console.error('Failed to send message:', error)
+      throw error
+    } finally {
+      setIsSendingMessage(false)
+    }
   }
 
   const getMessagesByConnection = (connectionId: string) => {
@@ -117,6 +122,8 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
         messages,
         sendMessage,
         getMessagesByConnection,
+        isSendingMessage,
+        sendMessageError,
       }}
     >
       {children}

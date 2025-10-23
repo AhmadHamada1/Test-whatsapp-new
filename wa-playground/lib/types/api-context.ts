@@ -13,6 +13,8 @@ export interface ApiContextType {
   isLoadingConnections: boolean
   connectionsError: string | null
   messages: Message[]
-  sendMessage: (connectionId: string, phoneNumber: string, message: string) => void
+  sendMessage: (connectionId: string, phoneNumber: string, message: string) => Promise<Message | void>
   getMessagesByConnection: (connectionId: string) => Message[]
+  isSendingMessage: boolean
+  sendMessageError: string | null
 }

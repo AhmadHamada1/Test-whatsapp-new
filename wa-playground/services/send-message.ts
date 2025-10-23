@@ -9,13 +9,18 @@ export async function sendMessage(
   message: string
 ): Promise<Message> {
   try {
-    const response = await axiosInstance.post('/connections/:id/message', {
-      connectionId,
-      phoneNumber,
-      message,
+    const response = await axiosInstance.post(`/connections/${connectionId}/message`, {
+      to: phoneNumber,
+      content: message,
+      type: "text"
     })
     
-    return response.data
+    // The API returns { success: true, message: string, data: Message }
+    if (response.data.success && response.data.data) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || 'Failed to send message')
+    }
   } catch (error) {
     console.error('Failed to send message:', error)
     throw error

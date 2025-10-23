@@ -44,6 +44,7 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     console.error('[Axios] Request error:', error)
+    console.log(error.response.data)
     return Promise.reject(error)
   }
 )

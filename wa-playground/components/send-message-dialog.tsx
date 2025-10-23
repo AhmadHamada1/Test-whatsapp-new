@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useApi } from "@/contexts/api-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,24 +19,40 @@ interface SendMessageDialogProps {
 }
 
 export function SendMessageDialog({ connectionId, open, onOpenChange }: SendMessageDialogProps) {
-  const { sendMessage, connections } = useApi()
+  const { sendMessage, connections, isSendingMessage, sendMessageError } = useApi()
   const { toast } = useToast()
   const [phoneNumber, setPhoneNumber] = useState("")
   const [message, setMessage] = useState("")
 
   const connection = connections.find((c) => c.connectionId === connectionId)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Clear form and errors when dialog opens
+  useEffect(() => {
+    if (open) {
+      setPhoneNumber("")
+      setMessage("")
+    }
+  }, [open])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (connectionId) {
-      sendMessage(connectionId, phoneNumber, message)
+    if (!connectionId) return
+
+    try {
+      await sendMessage(connectionId, phoneNumber, message)
       toast({
         title: "Message Sent",
-        description: "Your message is being processed",
+        description: "Your message has been sent successfully",
       })
       setPhoneNumber("")
       setMessage("")
       onOpenChange(false)
+    } catch (error) {
+      toast({
+        title: "Failed to Send Message",
+        description: sendMessageError || "An error occurred while sending the message",
+        variant: "destructive",
+      })
     }
   }
 
@@ -48,6 +64,11 @@ export function SendMessageDialog({ connectionId, open, onOpenChange }: SendMess
           <DialogDescription>Send a message via {connection?.name || "Unnamed Connection"}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {sendMessageError && (
+            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+              {sendMessageError}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="phoneNumber">Phone Number</Label>
             <Input
@@ -70,9 +91,9 @@ export function SendMessageDialog({ connectionId, open, onOpenChange }: SendMess
               required
             />
           </div>
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" disabled={isSendingMessage}>
             <Send className="h-4 w-4 mr-2" />
-            Send Message
+            {isSendingMessage ? "Sending..." : "Send Message"}
           </Button>
         </form>
       </DialogContent>

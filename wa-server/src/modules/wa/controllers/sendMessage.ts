@@ -55,7 +55,7 @@ export const sendMessage = async (
     });
 
   } catch (error: any) {
-    console.error("Error sending message:", error);
+    console.error("Error sending message:", error.message);
     
     // Handle specific error cases
     if (error.message.includes("Session not found")) {
