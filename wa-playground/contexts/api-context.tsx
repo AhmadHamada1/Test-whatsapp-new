@@ -5,6 +5,7 @@ import { createContext, useContext, useState, useEffect } from "react"
 import type { ApiContextType, Connection, Message, MessageStatus } from "@/lib/types"
 import { getConnections } from "@/services/get-connections"
 import { sendMessage as sendMessageApi } from "@/services/send-message"
+import { getMessages as getMessagesApi, type GetMessagesParams, type GetMessagesResponse } from "@/services/get-messages"
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined)
 
@@ -16,6 +17,10 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   const [connectionsError, setConnectionsError] = useState<string | null>(null)
   const [isSendingMessage, setIsSendingMessage] = useState(false)
   const [sendMessageError, setSendMessageError] = useState<string | null>(null)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  const [messagesError, setMessagesError] = useState<string | null>(null)
+  const [messagesByConnection, setMessagesByConnection] = useState<Record<string, Message[]>>({})
+  const [messagesStats, setMessagesStats] = useState<Record<string, GetMessagesResponse['stats']>>({})
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -74,8 +79,8 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem("messages", JSON.stringify(updatedMessages))
       
       return sentMessage
-    } catch (error) {
-      console.log("Error sending message:", error.response.data.message)
+    } catch (error: any) {
+      console.log("Error sending message:", error.response?.data?.message)
       const errorMessage = error instanceof Error ? error.message : 'Failed to send message'
       setSendMessageError(errorMessage)
       console.error('Failed to send message:', error)
@@ -86,7 +91,42 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   }
 
   const getMessagesByConnection = (connectionId: string) => {
-    return messages.filter((msg) => msg.connectionId === connectionId)
+    return messagesByConnection[connectionId] || []
+  }
+
+  const loadMessages = async (connectionId: string, params: GetMessagesParams = {}) => {
+    if (!apiKey) {
+      setMessagesError("API key is required to load messages")
+      return
+    }
+
+    setIsLoadingMessages(true)
+    setMessagesError(null)
+
+    try {
+      const response = await getMessagesApi(connectionId, params)
+      
+      // Update messages for this connection
+      setMessagesByConnection(prev => ({
+        ...prev,
+        [connectionId]: response.messages
+      }))
+      
+      // Update stats for this connection
+      setMessagesStats(prev => ({
+        ...prev,
+        [connectionId]: response.stats
+      }))
+      
+      return response
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load messages'
+      setMessagesError(errorMessage)
+      console.error('Failed to load messages:', error)
+      throw error
+    } finally {
+      setIsLoadingMessages(false)
+    }
   }
 
   const loadConnections = async () => {
@@ -122,8 +162,12 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
         messages,
         sendMessage,
         getMessagesByConnection,
+        loadMessages,
         isSendingMessage,
         sendMessageError,
+        isLoadingMessages,
+        messagesError,
+        messagesStats,
       }}
     >
       {children}

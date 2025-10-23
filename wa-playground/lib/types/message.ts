@@ -6,9 +6,11 @@ export interface Message {
   messageId: string
   connectionId: string
   to: string
+  from?: string
   content: string
   type: MessageType
   status: MessageStatus
+  direction: 'sent' | 'received'
   sentAt: string
   mediaUrl?: string
 }

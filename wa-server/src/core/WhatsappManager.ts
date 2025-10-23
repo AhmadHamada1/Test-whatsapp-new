@@ -76,6 +76,7 @@ class WhatsappManager {
 
     /** Send a message */
     async sendMessage(connectionId: string, to: string, message: string) {
+        console.log("sending message", connectionId, to, message);
         const active = this.clients.get(connectionId);
         if (!active) {
             throw new Error(`Session not found for connection ID: ${connectionId}`);

@@ -1,6 +1,7 @@
 // API Context Types
 import type { Connection } from './connection'
 import type { Message } from './message'
+import type { GetMessagesParams, GetMessagesResponse } from '@/services/get-messages'
 
 export interface ApiContextType {
   apiKey: string | null
@@ -15,6 +16,10 @@ export interface ApiContextType {
   messages: Message[]
   sendMessage: (connectionId: string, phoneNumber: string, message: string) => Promise<Message | void>
   getMessagesByConnection: (connectionId: string) => Message[]
+  loadMessages: (connectionId: string, params?: GetMessagesParams) => Promise<GetMessagesResponse | void>
   isSendingMessage: boolean
   sendMessageError: string | null
+  isLoadingMessages: boolean
+  messagesError: string | null
+  messagesStats: Record<string, GetMessagesResponse['stats']>
 }
