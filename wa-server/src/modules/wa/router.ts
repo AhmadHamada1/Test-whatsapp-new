@@ -3,6 +3,7 @@ import {
   addConnection,
   sendMessage,
   getConnectionStatus,
+  getMessages,
   disconnectConnection,
   listConnections,
 } from "./controllers";
@@ -240,10 +241,6 @@ router.delete('/connections/:id', requireApiKey, disconnectConnection);
  *               - to
  *               - content
  *             properties:
- *               connectionId:
- *                 type: string
- *                 description: ID of the connection to use for sending
- *                 example: "conn_123456789"
  *               to:
  *                 type: string
  *                 description: Recipient phone number (with country code)
@@ -300,5 +297,130 @@ router.delete('/connections/:id', requireApiKey, disconnectConnection);
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/connections/:id/message', requireApiKey, sendMessage);
+
+/**
+ * @swagger
+ * /v1/wa/connections/{id}/messages:
+ *   get:
+ *     summary: Get messages for a connection
+ *     description: Retrieves messages for a specific WhatsApp connection with optional filtering and pagination
+ *     tags: [Messages]
+ *     security:
+ *       - apiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Connection ID
+ *         example: "conn_123456789"
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 50
+ *         description: Number of messages to return (1-100)
+ *         example: 20
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *           default: 0
+ *         description: Number of messages to skip
+ *         example: 0
+ *       - in: query
+ *         name: direction
+ *         schema:
+ *           type: string
+ *           enum: [sent, received]
+ *         description: Filter by message direction
+ *         example: "sent"
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, sent, delivered, read, failed]
+ *         description: Filter by message status
+ *         example: "sent"
+ *     responses:
+ *       200:
+ *         description: Messages retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         messages:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Message'
+ *                         pagination:
+ *                           type: object
+ *                           properties:
+ *                             total:
+ *                               type: integer
+ *                               description: Total number of messages
+ *                             limit:
+ *                               type: integer
+ *                               description: Number of messages per page
+ *                             offset:
+ *                               type: integer
+ *                               description: Number of messages skipped
+ *                             hasMore:
+ *                               type: boolean
+ *                               description: Whether there are more messages
+ *                         stats:
+ *                           type: object
+ *                           properties:
+ *                             total:
+ *                               type: integer
+ *                               description: Total message count
+ *                             sent:
+ *                               type: integer
+ *                               description: Number of sent messages
+ *                             received:
+ *                               type: integer
+ *                               description: Number of received messages
+ *                             byStatus:
+ *                               type: object
+ *                               description: Message count by status
+ *                             byType:
+ *                               type: object
+ *                               description: Message count by type
+ *       400:
+ *         description: Bad request - Invalid parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Invalid API key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Connection not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/connections/:id/messages', requireApiKey, getMessages);
 
 export default router;

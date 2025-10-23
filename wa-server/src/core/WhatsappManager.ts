@@ -1,6 +1,6 @@
 import { Client, LocalAuth } from 'whatsapp-web.js';
 import QRCode from 'qrcode';
-import { ConnectionService } from './service';
+import { ConnectionService } from '../modules/wa/service';
 
 interface ActiveClient {
     id: string;
@@ -9,17 +9,17 @@ interface ActiveClient {
     qr?: string;
 }
 
-class WAManager {
-    private static instance: WAManager;
+class WhatsappManager {
+    private static instance: WhatsappManager;
     private clients: Map<string, ActiveClient> = new Map();
 
     private constructor() { }
 
-    public static getInstance(): WAManager {
-        if (!WAManager.instance) {
-            WAManager.instance = new WAManager();
+    public static getInstance(): WhatsappManager {
+        if (!WhatsappManager.instance) {
+            WhatsappManager.instance = new WhatsappManager();
         }
-        return WAManager.instance;
+        return WhatsappManager.instance;
     }
 
     /** Create a new WhatsApp connection and return QR */
@@ -120,4 +120,4 @@ class WAManager {
     }
 }
 
-export default WAManager.getInstance();
+export default WhatsappManager.getInstance();

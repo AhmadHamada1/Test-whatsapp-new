@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { AuthenticatedRequest, ApiResponse } from "../../../types";
 import { ConnectionService } from "../service";
-import WAManager from "../manager";
+import WhatsappManager from "../../../core/WhatsappManager";
 import {
   getApiKeyId,
   sendError,
@@ -22,7 +22,7 @@ export const disconnectConnection = async (
     
     // Try to disconnect from manager first
     try {
-      await WAManager.disconnect(id!);
+      await WhatsappManager.disconnect(id!);
     } catch (managerError) {
       // Session not found in manager, but continue with database cleanup
       console.warn(`Session not found in manager for connection ${id}:`, managerError);

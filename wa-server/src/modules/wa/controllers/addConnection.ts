@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { AuthenticatedRequest, ApiResponse, Connection, Message } from "../../../types";
 import { ConnectionService } from "../service";
-import WAManager from "../manager";
+import WhatsappManager from "../../../core/WhatsappManager";
 import {
   getApiKeyId,
   transformConnection,
@@ -25,7 +25,7 @@ export const addConnection = async (
     console.log("connectionId", connection);
 
     // Generate QR code using the manager
-    const { qr } = await WAManager.createConnection(connectionId, apiKeyId);
+    const { qr } = await WhatsappManager.createConnection(connectionId, apiKeyId);
     
     // Update the connection with the QR code and set status to connecting
     const updatedConnection = await ConnectionService.updateConnectionQRCode(connectionId, apiKeyId, qr);

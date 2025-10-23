@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { AuthenticatedRequest, ApiResponse, Connection } from "../../../types";
 import { ConnectionService } from "../service";
-import WAManager from "../manager";
+import WhatsappManager from "../../../core/WhatsappManager";
 import {
   getApiKeyId,
   transformConnection,
@@ -25,7 +25,7 @@ export const getConnectionStatus = async (
     if (!handleConnectionNotFound(connection, res)) return;
 
     // Check real-time status from manager
-    const managerStatus = WAManager.getConnectionStatus(id!);
+    const managerStatus = WhatsappManager.getConnectionStatus(id!);
     if (!managerStatus.exists) {
       // Session not found in manager, but exists in database
       // This could mean the session was disconnected or never created
