@@ -4,7 +4,7 @@ import { useApi } from "@/contexts/api-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Smartphone, Power, MessageSquare, History } from "lucide-react"
+import { Smartphone, Power, MessageSquare, History, Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import type { ConnectionStatus } from "@/lib/types"
 
 interface ConnectionsListProps {
@@ -13,7 +13,13 @@ interface ConnectionsListProps {
 }
 
 export function ConnectionsList({ onSendMessage, onViewMessages }: ConnectionsListProps) {
-  const { connections, disconnectConnection } = useApi()
+  const { 
+    connections, 
+    disconnectConnection, 
+    loadConnections, 
+    isLoadingConnections, 
+    connectionsError 
+  } = useApi()
 
   const getStatusColor = (status: ConnectionStatus) => {
     switch (status) {
@@ -26,6 +32,39 @@ export function ConnectionsList({ onSendMessage, onViewMessages }: ConnectionsLi
     }
   }
 
+  // Show loading state
+  if (isLoadingConnections) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 text-muted-foreground mb-4 animate-spin" />
+          <p className="text-muted-foreground text-center">
+            Loading connections...
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Show error state
+  if (connectionsError) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <AlertCircle className="h-8 w-8 text-destructive mb-4" />
+          <p className="text-destructive text-center mb-4">
+            {connectionsError}
+          </p>
+          <Button variant="outline" onClick={loadConnections} disabled={isLoadingConnections}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Show empty state
   if (connections.length === 0) {
     return (
       <Card>

@@ -25,7 +25,11 @@ export interface ApiContextType {
   setApiKey: (key: string) => void
   connections: Connection[]
   addConnection: (connection: Omit<Connection, "id" | "createdAt">) => void
+  addConnectionFromApi: (connection: Connection) => void
   disconnectConnection: (id: string) => void
+  loadConnections: () => Promise<void>
+  isLoadingConnections: boolean
+  connectionsError: string | null
   messages: Message[]
   sendMessage: (connectionId: string, phoneNumber: string, message: string) => void
   getMessagesByConnection: (connectionId: string) => Message[]

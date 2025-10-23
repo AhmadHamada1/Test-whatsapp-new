@@ -3,6 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 import type { ApiContextType, Connection, Message, MessageStatus } from "@/lib/types"
+import { getConnections } from "@/services/get-connections"
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined)
 
@@ -10,6 +11,8 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   const [apiKey, setApiKeyState] = useState<string | null>(null)
   const [connections, setConnections] = useState<Connection[]>([])
   const [messages, setMessages] = useState<Message[]>([])
+  const [isLoadingConnections, setIsLoadingConnections] = useState(false)
+  const [connectionsError, setConnectionsError] = useState<string | null>(null)
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -34,6 +37,13 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString(),
     }
     const updatedConnections = [...connections, newConnection]
+    setConnections(updatedConnections)
+    localStorage.setItem("connections", JSON.stringify(updatedConnections))
+  }
+
+  // Function to add connection from API response (with real ID and timestamps)
+  const addConnectionFromApi = (connection: Connection) => {
+    const updatedConnections = [...connections, connection]
     setConnections(updatedConnections)
     localStorage.setItem("connections", JSON.stringify(updatedConnections))
   }
@@ -77,6 +87,23 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
     return messages.filter((msg) => msg.connectionId === connectionId)
   }
 
+  const loadConnections = async () => {
+    setIsLoadingConnections(true)
+    setConnectionsError(null)
+    
+    try {
+      const fetchedConnections = await getConnections()
+      setConnections(fetchedConnections)
+      localStorage.setItem("connections", JSON.stringify(fetchedConnections))
+    } catch (error) {
+      console.error('Failed to load connections:', error)
+      setConnectionsError(error instanceof Error ? error.message : 'Failed to load connections')
+      // Keep existing connections from localStorage if API fails
+    } finally {
+      setIsLoadingConnections(false)
+    }
+  }
+
   return (
     <ApiContext.Provider
       value={{
@@ -84,7 +111,11 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
         setApiKey,
         connections,
         addConnection,
+        addConnectionFromApi,
         disconnectConnection,
+        loadConnections,
+        isLoadingConnections,
+        connectionsError,
         messages,
         sendMessage,
         getMessagesByConnection,

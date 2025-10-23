@@ -14,9 +14,14 @@ const axiosInstance: AxiosInstance = axios.create({
 const getApiKeyFromStorage = (): string | null => {
   if (typeof window !== 'undefined') {
     // Client-side: get from localStorage
-    return localStorage.getItem('api_key')
+    const storedKey = localStorage.getItem('api_key')
+    if (storedKey) {
+      return storedKey
+    }
+    // Fallback to test API key for development
+    return 'test-api-key-12345'
   }
-  return null
+  return 'test-api-key-12345'
 }
 
 // Request interceptor for logging, error handling, and automatic API key injection

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useApi } from "@/contexts/api-context"
 import { ApiKeySetup } from "@/components/api-key-setup"
 import { ConnectionsList } from "@/components/connections-list"
@@ -12,9 +12,16 @@ import { Key, LogOut } from "lucide-react"
 import { Toaster } from "@/components/ui/toaster"
 
 export default function Home() {
-  const { apiKey, setApiKey } = useApi()
+  const { apiKey, setApiKey, loadConnections } = useApi()
   const [sendMessageConnectionId, setSendMessageConnectionId] = useState<string | null>(null)
   const [viewMessagesConnectionId, setViewMessagesConnectionId] = useState<string | null>(null)
+
+  // Load connections when component mounts and API key is available
+  useEffect(() => {
+    if (apiKey) {
+      loadConnections()
+    }
+  }, [apiKey, loadConnections])
 
   if (!apiKey) {
     return <ApiKeySetup />
