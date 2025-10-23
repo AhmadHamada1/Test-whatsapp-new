@@ -7,31 +7,8 @@ const router = Router();
  * @swagger
  * /health:
  *   get:
- *     summary: Basic health check
- *     description: Returns a simple working status
- *     tags: [Health]
- *     responses:
- *       200:
- *         description: Server is working
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "it is working"
- */
-router.get("/", (req: Request, res: Response) => {
-  res.json({ message: "it is working" });
-});
-
-/**
- * @swagger
- * /health/db:
- *   get:
- *     summary: Database health check
- *     description: Checks if the database connection is healthy
+ *     summary: System health check
+ *     description: Checks if the system, including the database, is healthy
  *     tags: [Health]
  *     responses:
  *       200:
@@ -53,9 +30,9 @@ router.get("/", (req: Request, res: Response) => {
  *       503:
  *         description: Database is unhealthy
  */
-router.get("/db", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   const startTime = Date.now();
-  
+
   try {
     // Check if mongoose is connected
     if (mongoose.connection.readyState !== 1) {
@@ -72,9 +49,9 @@ router.get("/db", async (req: Request, res: Response) => {
     } else {
       throw new Error("Database connection not available");
     }
-    
+
     const responseTime = Date.now() - startTime;
-    
+
     res.json({
       status: "healthy",
       database: "connected",
@@ -83,7 +60,7 @@ router.get("/db", async (req: Request, res: Response) => {
     });
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    
+
     res.status(503).json({
       status: "unhealthy",
       database: "error",

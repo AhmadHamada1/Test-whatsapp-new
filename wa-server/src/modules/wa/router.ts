@@ -3,66 +3,12 @@ import {
   addConnection,
   sendMessage,
   getConnectionStatus,
-  updateConnectionStatus,
   disconnectConnection,
   listConnections,
 } from "./controllers";
 import { requireApiKey } from "../../middlewares/requireApiKey";
 
 const router = Router();
-
-/**
- * @swagger
- * /v1/wa/connections/add:
- *   post:
- *     summary: Create a new WhatsApp connection
- *     description: Initiates a new WhatsApp Web connection and returns a QR code for authentication
- *     tags: [Connections]
- *     security:
- *       - apiKeyAuth: []
- *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *                 description: Optional name for the connection
- *                 example: "My WhatsApp Bot"
- *     responses:
- *       200:
- *         description: Connection created successfully
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       $ref: '#/components/schemas/Connection'
- *       400:
- *         description: Bad request - Invalid input
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       401:
- *         description: Unauthorized - Invalid API key
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-router.post('/connections/add', requireApiKey, addConnection);
 
 /**
  * @swagger
@@ -160,38 +106,27 @@ router.get('/connections/:id/status', requireApiKey, getConnectionStatus);
 
 /**
  * @swagger
- * /v1/wa/connections/{id}/status:
- *   put:
- *     summary: Update connection status
- *     description: Updates the status of a WhatsApp connection
+ * /v1/wa/connections/add:
+ *   post:
+ *     summary: Create a new WhatsApp connection
+ *     description: Initiates a new WhatsApp Web connection and returns a QR code for authentication
  *     tags: [Connections]
  *     security:
  *       - apiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Unique identifier for the connection
- *         example: "507f1f77bcf86cd799439011"
  *     requestBody:
- *       required: true
+ *       required: false
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - status
  *             properties:
- *               status:
+ *               name:
  *                 type: string
- *                 enum: [connecting, connected, disconnected, error]
- *                 description: New status for the connection
- *                 example: "connected"
+ *                 description: Optional name for the connection
+ *                 example: "My WhatsApp Bot"
  *     responses:
  *       200:
- *         description: Connection status updated successfully
+ *         description: Connection created successfully
  *         content:
  *           application/json:
  *             schema:
@@ -202,19 +137,13 @@ router.get('/connections/:id/status', requireApiKey, getConnectionStatus);
  *                     data:
  *                       $ref: '#/components/schemas/Connection'
  *       400:
- *         description: Bad request - Invalid status or connection ID
+ *         description: Bad request - Invalid input
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *       401:
  *         description: Unauthorized - Invalid API key
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       404:
- *         description: Connection not found
  *         content:
  *           application/json:
  *             schema:
@@ -226,12 +155,12 @@ router.get('/connections/:id/status', requireApiKey, getConnectionStatus);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/connections/:id/status', requireApiKey, updateConnectionStatus);
+router.post('/connections/add', requireApiKey, addConnection);
 
 /**
  * @swagger
  * /v1/wa/connections/{id}/disconnect:
- *   post:
+ *   delete:
  *     summary: Disconnect a WhatsApp connection
  *     description: Disconnects and removes a WhatsApp connection
  *     tags: [Connections]
@@ -289,7 +218,7 @@ router.put('/connections/:id/status', requireApiKey, updateConnectionStatus);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/connections/:id/disconnect', requireApiKey, disconnectConnection);
+router.delete('/connections/:id/disconnect', requireApiKey, disconnectConnection);
 
 /**
  * @swagger
