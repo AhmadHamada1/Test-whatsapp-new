@@ -12,14 +12,14 @@ export async function connectToDatabase(mongoUri: string): Promise<void> {
   
   // Configure connection options for better timeout handling
   const options = {
-    serverSelectionTimeoutMS: 10000, // 10 seconds
-    connectTimeoutMS: 10000, // 10 seconds
-    socketTimeoutMS: 45000, // 45 seconds
-    maxPoolSize: 10, // Maintain up to 10 socket connections
-    minPoolSize: 5, // Maintain a minimum of 5 socket connections
-    maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+    // serverSelectionTimeoutMS: 10000, // 10 seconds
+    // connectTimeoutMS: 10000, // 10 seconds
+    // socketTimeoutMS: 45000, // 45 seconds
+    // maxPoolSize: 10, // Maintain up to 10 socket connections
+    // minPoolSize: 5, // Maintain a minimum of 5 socket connections
+    // maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
     retryWrites: true,
-    w: 'majority' as const
+    // w: 'majority' as const
   };
 
   try {

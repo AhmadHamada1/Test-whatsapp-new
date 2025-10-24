@@ -14,14 +14,9 @@ async function startServer(): Promise<void> {
     // Connect to database
     await connectToDatabase(config.MONGODB_URI);
 
-    // Reload connection map without creating clients (for server restart)
-    console.log('Reloading connection map...');
-    await WhatsappManager.reloadMapOnly();
-
     // Start the server
     const server: Server = app.listen(config.PORT, () => {
-      console.log(`🚀 WhatsApp Server running on port ${config.PORT}`);
-      console.log(`🌐 Environment: ${config.NODE_ENV}`);
+      console.log(`🚀 READY - WA-Server on PORT:${config.PORT} [${config.NODE_ENV.toUpperCase()}]`);
     });
 
     // Graceful shutdown

@@ -12,6 +12,10 @@ interface ConnectionActionsProps {
   onRestore: (connectionId: string) => void
   onShowQR: (connection: { connectionId: string; name?: string; qrCode?: string }) => void
   isDisconnecting: boolean
+  isSendingMessage?: boolean
+  isViewingMessages?: boolean
+  isRestoring?: boolean
+  isShowingQR?: boolean
 }
 
 export function ConnectionActions({
@@ -21,7 +25,11 @@ export function ConnectionActions({
   onDisconnect,
   onRestore,
   onShowQR,
-  isDisconnecting
+  isDisconnecting,
+  isSendingMessage = false,
+  isViewingMessages = false,
+  isRestoring = false,
+  isShowingQR = false
 }: ConnectionActionsProps) {
   const handleShowQR = () => {
     onShowQR({
@@ -51,12 +59,30 @@ export function ConnectionActions({
     <div className="flex flex-wrap gap-2">
       {connection.status === "ready" && (
         <>
-          <Button size="sm" variant="outline" onClick={handleSendMessage}>
-            <MessageSquare className="h-4 w-4 mr-2" />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSendMessage}
+            disabled={isSendingMessage}
+          >
+            {isSendingMessage ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <MessageSquare className="h-4 w-4 mr-2" />
+            )}
             Send Message
           </Button>
-          <Button size="sm" variant="outline" onClick={handleViewMessages}>
-            <History className="h-4 w-4 mr-2" />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleViewMessages}
+            disabled={isViewingMessages}
+          >
+            {isViewingMessages ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <History className="h-4 w-4 mr-2" />
+            )}
             View Messages
           </Button>
         </>
@@ -65,16 +91,34 @@ export function ConnectionActions({
       {(connection.status === "requesting_qr" || connection.status === "waiting_connection") && (
         <>
           <p className="text-sm text-muted-foreground">Scan QR code to activate this connection</p>
-          <Button size="sm" variant="outline" onClick={handleShowQR}>
-            <QrCode className="h-4 w-4 mr-2" />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleShowQR}
+            disabled={isShowingQR}
+          >
+            {isShowingQR ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <QrCode className="h-4 w-4 mr-2" />
+            )}
             Scan QR Code
           </Button>
         </>
       )}
 
       {connection.status === "needs_restore" && (
-        <Button size="sm" variant="outline" onClick={handleRestore}>
-          <Zap className="h-4 w-4 mr-2" />
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleRestore}
+          disabled={isRestoring}
+        >
+          {isRestoring ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Zap className="h-4 w-4 mr-2" />
+          )}
           Restore Connection
         </Button>
       )}
