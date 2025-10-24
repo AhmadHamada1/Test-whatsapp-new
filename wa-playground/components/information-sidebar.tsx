@@ -31,6 +31,16 @@ export function InformationSidebar({ open, onOpenChange }: InformationSidebarPro
           </div>
 
           <hr />
+          <div className="flex-1">
+            <h3 className="text-sm font-medium mb-4">TODO: Limitors:</h3>
+            <ul className="space-y-3 mb-4">
+              <li>1. 1st week, 1 message per minute.</li>
+              <li>2. 2nd week, 2 messages per minute.</li>
+              <li>3. 3rd week onwards, 3 messages per minute.</li>
+            </ul>
+          </div>
+
+          <hr />
           <h4 className="text-sm font-medium mt-6 mb-3">Quick Tips:</h4>
           <ul className="space-y-2 text-sm">
             <li>• Make sure your WhatsApp is logged in on the device you want to connect</li>

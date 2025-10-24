@@ -165,6 +165,11 @@ export class ClientManager {
         let cleanedTo = String(to).trim();
         if (cleanedTo.startsWith("+")) cleanedTo = cleanedTo.slice(1);
         if (!cleanedTo.endsWith("@c.us")) cleanedTo = `${cleanedTo}@c.us`;
+        
+
+        // sends typing indicator for 25 seconds
+        // return active.client.sendStateTyping();
+
         return active.client.sendMessage(cleanedTo, message);
     }
 
