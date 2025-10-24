@@ -48,8 +48,8 @@ const ConnectionSchema = new Schema<IConnection>(
     },
     status: { 
       type: String, 
-      enum: ["ready", "needs_restore", "disconnected", "expired"], 
-      default: "needs_restore", 
+      enum: ["waiting_connection", "ready", "disconnected", "needs_restore", "error"], 
+      default: "waiting_connection", 
       index: true 
     },
     qrCode: { type: String },

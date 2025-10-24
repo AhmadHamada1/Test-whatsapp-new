@@ -1,9 +1,7 @@
-import { Client } from 'whatsapp-web.js';
 import { ClientManager } from './ClientManager';
 import { SessionManager } from './SessionManager';
-import { QRResponse, ConnectionStatus, RealisticStatus, ReloadResult } from '../types/WhatsappTypes';
+import { QRResponse, RealisticStatus, ReloadResult } from '../types/WhatsappTypes';
 import { IConnection } from '../modules/wa/model';
-import { CLIENT_STATUS } from '../constants/WhatsappConstants';
 
 class WhatsappManager {
     private static instance: WhatsappManager;
@@ -69,7 +67,7 @@ class WhatsappManager {
     }
 
     /** Get connection status */
-    getConnectionStatus(connectionId: string): ConnectionStatus {
+    getConnectionStatus(connectionId: string): { exists: boolean; status?: string; error?: string } {
         return this.clientManager.getConnectionStatus(connectionId);
     }
 

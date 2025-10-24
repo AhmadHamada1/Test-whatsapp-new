@@ -1,18 +1,20 @@
+import { ConnectionStatus } from '../constants/ConnectionStatus';
+
 export interface ActiveClient {
     id: string;
-    status: 'qr_pending' | 'ready' | 'disconnected' | "needs_restore";
+    status: ConnectionStatus;
     client: any; // WhatsApp Client type
     qr?: string;
 }
 
-export interface ConnectionStatus {
+export interface ConnectionStatusResponse {
     exists: boolean;
     status?: string;
     error?: string;
 }
 
 export interface RealisticStatus {
-    status: 'ready' | 'needs_restore' | 'disconnected' | 'expired';
+    status: ConnectionStatus;
     message: string;
     needsRestore: boolean;
 }

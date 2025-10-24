@@ -14,14 +14,15 @@ export interface ApiError {
 // Connection Types
 export interface Connection {
   connectionId: string;
-  status: ConnectionStatus;
+  status: string;
   qrCode?: string;
   createdAt: Date;
   lastActivity?: Date;
   name?: string;
 }
 
-export type ConnectionStatus = "ready" | "needs_restore" | "disconnected" | "expired";
+export type { ConnectionStatus } from '../constants/ConnectionStatus';
+export { CONNECTION_STATUS } from '../constants/ConnectionStatus';
 
 // Message Types
 export interface Message {
@@ -44,7 +45,7 @@ export interface CreateConnectionRequest {
 }
 
 export interface UpdateConnectionStatusRequest {
-  status: ConnectionStatus;
+  status: string;
 }
 
 export interface SendMessageRequest {

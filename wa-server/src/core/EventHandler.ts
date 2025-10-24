@@ -1,8 +1,7 @@
 import { Client } from 'whatsapp-web.js';
 import { ConnectionService } from '../modules/wa/service';
 import { ActiveClient, ClientInfo } from '../types/WhatsappTypes';
-import { ConnectionStatus } from '../types';
-import { CLIENT_STATUS } from '../constants/WhatsappConstants';
+import { CONNECTION_STATUS } from '../constants/ConnectionStatus';
 
 export class EventHandler {
     private clients: Map<string, ActiveClient>;
@@ -21,7 +20,7 @@ export class EventHandler {
         const session = this.clients.get(connectionId);
         if (session) {
             session.qr = qrImage;
-            session.status = CLIENT_STATUS.QR_PENDING;
+            session.status = CONNECTION_STATUS.WAITING_CONNECTION;
         }
         
         return qrImage;
@@ -39,11 +38,11 @@ export class EventHandler {
             return;
         }
 
-        session.status = CLIENT_STATUS.READY;
+                session.status = CONNECTION_STATUS.READY;
 
         // Update database with connected status
         try {
-            await ConnectionService.updateConnectionStatus(connectionId, apiKeyId, CLIENT_STATUS.READY);
+            await ConnectionService.updateConnectionStatus(connectionId, apiKeyId, CONNECTION_STATUS.READY);
             console.log(`[${connectionId}] Database updated: connected`);
             
             // Capture and save client information
@@ -59,10 +58,10 @@ export class EventHandler {
                 console.warn(`[${connectionId}] Failed to save client info:`, clientInfoError);
                 // Don't fail the connection if client info capture fails
             }
-        } catch (error) {
-            session.status = CLIENT_STATUS.QR_PENDING;
-            console.error(`[${connectionId}] Failed to update database:`, error);
-        }
+                } catch (error) {
+                    session.status = CONNECTION_STATUS.WAITING_CONNECTION;
+                    console.error(`[${connectionId}] Failed to update database:`, error);
+                }
     }
 
     /**
@@ -73,7 +72,7 @@ export class EventHandler {
 
         // Update database with disconnected status
         try {
-            await ConnectionService.updateConnectionStatus(connectionId, apiKeyId, CLIENT_STATUS.DISCONNECTED);
+            await ConnectionService.updateConnectionStatus(connectionId, apiKeyId, CONNECTION_STATUS.DISCONNECTED);
             console.log(`[${connectionId}] Database updated: disconnected`);
         } catch (error) {
             console.error(`[${connectionId}] Failed to update database:`, error);

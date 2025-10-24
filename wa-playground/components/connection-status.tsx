@@ -12,7 +12,6 @@ export function ConnectionStatus({ status }: ConnectionStatusProps) {
     switch (status) {
       case "ready":
         return "text-green-600 border-green-200 bg-green-50"
-      case "requesting_qr":
       case "waiting_connection":
         return "text-yellow-600 border-yellow-200 bg-yellow-50"
       case "needs_restore":

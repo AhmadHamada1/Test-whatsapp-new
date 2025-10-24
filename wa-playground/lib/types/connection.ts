@@ -1,5 +1,5 @@
 // Connection Types
-export type ConnectionStatus = "requesting_qr" | "waiting_connection" | "ready" | "needs_restore" | "disconnected" | "error"
+export type ConnectionStatus = "waiting_connection" | "ready" | "disconnected" | "needs_restore" | "error"
 
 export interface ClientInfo {
   phoneNumber?: string

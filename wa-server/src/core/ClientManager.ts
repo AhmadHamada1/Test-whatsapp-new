@@ -1,7 +1,8 @@
 import { Client, LocalAuth } from 'whatsapp-web.js';
 import { EventHandler } from './EventHandler';
-import { ActiveClient, ConnectionStatus, RealisticStatus } from '../types/WhatsappTypes';
-import { CLIENT_STATUS, REALISTIC_STATUS, PUPPETEER_ARGS } from '../constants/WhatsappConstants';
+import { ActiveClient, RealisticStatus } from '../types/WhatsappTypes';
+import { CONNECTION_STATUS, getStatusMetadata } from '../constants/ConnectionStatus';
+import { PUPPETEER_ARGS } from '../constants/WhatsappConstants';
 
 export class ClientManager {
     private clients: Map<string, ActiveClient> = new Map();
@@ -28,7 +29,7 @@ export class ClientManager {
         const activeClient: ActiveClient = {
             id: connectionId,
             client,
-            status: CLIENT_STATUS.QR_PENDING
+            status: CONNECTION_STATUS.WAITING_CONNECTION
         };
 
         if (qr) {
@@ -83,7 +84,7 @@ export class ClientManager {
     /**
      * Get connection status
      */
-    getConnectionStatus(connectionId: string): ConnectionStatus {
+    getConnectionStatus(connectionId: string): { exists: boolean; status?: string; error?: string } {
         const active = this.clients.get(connectionId);
         if (!active) {
             return {
@@ -104,39 +105,20 @@ export class ClientManager {
         const active = this.clients.get(connectionId);
 
         if (!active) {
+            const metadata = getStatusMetadata(CONNECTION_STATUS.NEEDS_RESTORE);
             return {
-                status: REALISTIC_STATUS.NEEDS_RESTORE,
-                message: 'Connection needs to be restored before use',
-                needsRestore: true
+                status: CONNECTION_STATUS.NEEDS_RESTORE,
+                message: metadata.message,
+                needsRestore: metadata.needsRestore
             };
         }
 
-        switch (active.status) {
-            case CLIENT_STATUS.READY:
-                return {
-                    status: REALISTIC_STATUS.READY,
-                    message: 'Connection is ready to send messages',
-                    needsRestore: false
-                };
-            case CLIENT_STATUS.QR_PENDING:
-                return {
-                    status: REALISTIC_STATUS.EXPIRED,
-                    message: 'Connection expired, needs to scan QR code again',
-                    needsRestore: false
-                };
-            case CLIENT_STATUS.DISCONNECTED:
-                return {
-                    status: REALISTIC_STATUS.DISCONNECTED,
-                    message: 'Connection is disconnected',
-                    needsRestore: true
-                };
-            default:
-                return {
-                    status: REALISTIC_STATUS.NEEDS_RESTORE,
-                    message: 'Connection status unknown, needs to be restored',
-                    needsRestore: true
-                };
-        }
+        const metadata = getStatusMetadata(active.status);
+        return {
+            status: active.status,
+            message: metadata.message,
+            needsRestore: metadata.needsRestore
+        };
     }
 
     /**
@@ -158,14 +140,14 @@ export class ClientManager {
         if (!active) {
             throw new Error(`Session not found for connection ID: ${connectionId}`);
         }
-        if (active.status !== CLIENT_STATUS.READY) {
+        if (active.status !== CONNECTION_STATUS.READY) {
             throw new Error(`Client not ready. Current status: ${active.status}`);
         }
 
         let cleanedTo = String(to).trim();
         if (cleanedTo.startsWith("+")) cleanedTo = cleanedTo.slice(1);
         if (!cleanedTo.endsWith("@c.us")) cleanedTo = `${cleanedTo}@c.us`;
-        
+
 
         // sends typing indicator for 25 seconds
         // return active.client.sendStateTyping();

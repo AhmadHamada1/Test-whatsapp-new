@@ -10,7 +10,7 @@ import {
 
 // Extended connection type for API responses
 interface ExtendedConnection extends Omit<Connection, 'status'> {
-  status: 'ready' | 'needs_restore' | 'disconnected' | 'expired';
+  status: 'waiting_connection' | 'ready' | 'disconnected' | 'needs_restore' | 'error';
   message: string;
   needsRestore: boolean;
   clientInfo?: {

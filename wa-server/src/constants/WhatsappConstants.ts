@@ -1,16 +1,5 @@
-export const CLIENT_STATUS = {
-    QR_PENDING: 'qr_pending',
-    READY: 'ready',
-    DISCONNECTED: 'disconnected',
-    NEEDS_RESTORE: 'needs_restore'
-} as const;
-
-export const REALISTIC_STATUS = {
-    READY: 'ready',
-    NEEDS_RESTORE: 'needs_restore',
-    DISCONNECTED: 'disconnected',
-    EXPIRED: 'expired'
-} as const;
+// Re-export status constants for backward compatibility
+export { CONNECTION_STATUS as CLIENT_STATUS, CONNECTION_STATUS as REALISTIC_STATUS } from './ConnectionStatus';
 
 export const PUPPETEER_ARGS = ['--no-sandbox'];
 

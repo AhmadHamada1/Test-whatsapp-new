@@ -88,7 +88,7 @@ export function ConnectionActions({
         </>
       )}
 
-      {(connection.status === "requesting_qr" || connection.status === "waiting_connection") && (
+      {connection.status === "waiting_connection" && (
         <>
           <p className="text-sm text-muted-foreground">Scan QR code to activate this connection</p>
           <Button
