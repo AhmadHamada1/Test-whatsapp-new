@@ -7,14 +7,16 @@ import { ConnectionsList } from "@/components/connections-list"
 import { AddConnectionDialog } from "@/components/add-connection-dialog"
 import { SendMessageDialog } from "@/components/send-message-dialog"
 import { MessageHistoryDialog } from "@/components/message-history-dialog"
+import { InformationSidebar } from "@/components/information-sidebar"
 import { Button } from "@/components/ui/button"
-import { Key, LogOut } from "lucide-react"
+import { Info, Key, LogOut } from "lucide-react"
 import { Toaster } from "@/components/ui/toaster"
 
 export default function Home() {
   const { apiKey, setApiKey, loadConnections } = useApi()
   const [sendMessageConnectionId, setSendMessageConnectionId] = useState<string | null>(null)
   const [viewMessagesConnectionId, setViewMessagesConnectionId] = useState<string | null>(null)
+  const [isInfoSidebarOpen, setIsInfoSidebarOpen] = useState(false)
 
   // Load connections when component mounts and API key is available
   useEffect(() => {
@@ -32,6 +34,10 @@ export default function Home() {
     setApiKey("")
   }
 
+  const handleInfo = () => {
+    setIsInfoSidebarOpen(true)
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -46,10 +52,15 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground">Manage connections and test messaging</p>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleInfo}>
+              <Info className="h-4 w-4" />
+            </Button>
             <Button variant="outline" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -81,6 +92,11 @@ export default function Home() {
         connectionId={viewMessagesConnectionId}
         open={!!viewMessagesConnectionId}
         onOpenChange={(open) => !open && setViewMessagesConnectionId(null)}
+      />
+
+      <InformationSidebar
+        open={isInfoSidebarOpen}
+        onOpenChange={setIsInfoSidebarOpen}
       />
 
       <Toaster />

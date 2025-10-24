@@ -17,7 +17,6 @@ const axiosInstance: AxiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     console.log(`[Axios] ${config.method?.toUpperCase()} ${config.url}`)
-    console.log("config:", config.headers)
     
     return config
   },
