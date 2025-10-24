@@ -7,7 +7,7 @@ import * as path from 'path';
 
 interface ActiveClient {
     id: string;
-    status: 'qr_pending' | 'ready' | 'disconnected' | 'restoring';
+    status: 'qr_pending' | 'ready' | 'disconnected' | "needs_restore";
     client: Client;
     qr?: string;
 }
@@ -51,8 +51,22 @@ class WhatsappManager {
 
                 // Update database with connected status
                 try {
-                    await ConnectionService.updateConnectionStatus(connectionId, apiKeyId, 'connected');
+                    await ConnectionService.updateConnectionStatus(connectionId, apiKeyId, 'ready');
                     console.log(`[${connectionId}] Database updated: connected`);
+                    
+                    // Capture and save client information
+                    try {
+                        const clientInfo = await this.captureClientInfo(client, connectionId);
+                        await ConnectionService.updateConnectionClientInfo(connectionId, apiKeyId, clientInfo);
+                        console.log(`[${connectionId}] Client info saved:`, {
+                            phoneNumber: clientInfo.phoneNumber,
+                            platform: clientInfo.platform,
+                            profileName: clientInfo.whatsappInfo?.profileName
+                        });
+                    } catch (clientInfoError) {
+                        console.warn(`[${connectionId}] Failed to save client info:`, clientInfoError);
+                        // Don't fail the connection if client info capture fails
+                    }
                 } catch (error) {
                     session.status = 'qr_pending';
                     console.error(`[${connectionId}] Failed to update database:`, error);
@@ -138,6 +152,55 @@ class WhatsappManager {
         }));
     }
 
+    /** Check if a connection exists in the manager */
+    hasConnection(connectionId: string): boolean {
+        return this.clients.has(connectionId);
+    }
+
+    /** Get realistic status for a connection */
+    getRealisticStatus(connectionId: string): { 
+        status: 'ready' | 'needs_restore' | 'disconnected' | 'expired';
+        message: string;
+        needsRestore: boolean;
+    } {
+        const active = this.clients.get(connectionId);
+        
+        if (!active) {
+            return {
+                status: 'needs_restore',
+                message: 'Connection needs to be restored before use',
+                needsRestore: true
+            };
+        }
+
+        switch (active.status) {
+            case 'ready':
+                return {
+                    status: 'ready',
+                    message: 'Connection is ready to send messages',
+                    needsRestore: false
+                };
+            case 'qr_pending':
+                return {
+                    status: 'expired',
+                    message: 'Connection expired, needs to scan QR code again',
+                    needsRestore: false
+                };
+            case 'disconnected':
+                return {
+                    status: 'disconnected',
+                    message: 'Connection is disconnected',
+                    needsRestore: true
+                };
+            default:
+                return {
+                    status: 'needs_restore',
+                    message: 'Connection status unknown, needs to be restored',
+                    needsRestore: true
+                };
+        }
+    }
+
     /** Reload all past sessions from database */
     async reloadPastSessions(): Promise<void> {
         try {
@@ -150,7 +213,7 @@ class WhatsappManager {
 
             for (const connection of connections) {
                 // Only reload connections that were previously connected
-                if (connection.status === 'connected') {
+                if (connection.status === 'ready') {
                     try {
                         const connectionId = (connection._id as any).toString();
                         const apiKeyId = (connection.apiKeyId as any).toString();
@@ -173,6 +236,31 @@ class WhatsappManager {
             console.log('Finished reloading past sessions');
         } catch (error) {
             console.error('Error reloading past sessions:', error);
+        }
+    }
+
+    /** Reload map without creating actual clients (for server restart) */
+    async reloadMapOnly(): Promise<void> {
+        try {
+            console.log('Reloading connection map without creating clients...');
+            
+            // Get all connections from database
+            const connections = await ConnectionService.getAllConnections();
+            
+            console.log(`Found ${connections.length} connections in database`);
+            
+            // Clear existing clients map
+            this.clients.clear();
+            
+            // Just log the connections without creating clients
+            for (const connection of connections) {
+                const connectionId = (connection._id as any).toString();
+                console.log(`Connection ${connectionId}: status=${connection.status}`);
+            }
+            
+            console.log('Connection map reloaded successfully (no clients created)');
+        } catch (error) {
+            console.error('Error reloading connection map:', error);
         }
     }
 
@@ -242,13 +330,27 @@ class WhatsappManager {
 
                 // Update database with connected status
                 try {
-                    await ConnectionService.updateConnectionStatus(connectionId, apiKeyId, 'connected');
+                    await ConnectionService.updateConnectionStatus(connectionId, apiKeyId, 'ready');
                     console.log(`[${connectionId}] Database updated: connected`);
+                    
+                    // Capture and save client information
+                    try {
+                        const clientInfo = await this.captureClientInfo(client, connectionId);
+                        await ConnectionService.updateConnectionClientInfo(connectionId, apiKeyId, clientInfo);
+                        console.log(`[${connectionId}] Client info saved:`, {
+                            phoneNumber: clientInfo.phoneNumber,
+                            platform: clientInfo.platform,
+                            profileName: clientInfo.whatsappInfo?.profileName
+                        });
+                    } catch (clientInfoError) {
+                        console.warn(`[${connectionId}] Failed to save client info:`, clientInfoError);
+                        // Don't fail the connection if client info capture fails
+                    }
                 } catch (error) {
                     session.status = 'disconnected';
                     console.error(`[${connectionId}] Failed to update database:`, error);
                 }
-
+                
                 resolve();
             });
 
@@ -271,11 +373,11 @@ class WhatsappManager {
                 // Don't update the session status here as this indicates the session needs re-authentication
             });
 
-            // Add session to clients map with 'restoring' status
+            // Add session to clients map with 'qr_pending' status
             this.clients.set(connectionId, {
                 id: connectionId,
                 client,
-                status: 'restoring'
+                status: 'qr_pending'
             });
 
             // Initialize the client
@@ -300,6 +402,7 @@ class WhatsappManager {
     /** Helper function to delete session cache and auth data */
     private async deleteSessionData(connectionId: string): Promise<void> {
         try {
+            console.log(`[${connectionId}] Deleting session data`, process.cwd());
             const authDir = path.join(process.cwd(), '.wwebjs_auth', `session-${connectionId}`);
             const cacheDir = path.join(process.cwd(), '.wwebjs_cache', `session-${connectionId}`);
 
@@ -317,6 +420,58 @@ class WhatsappManager {
         } catch (error) {
             console.error(`[${connectionId}] Error deleting session data:`, error);
             // Don't throw error here as we still want to disconnect the client
+        }
+    }
+
+    /** Helper function to capture client information */
+    private async captureClientInfo(client: Client, connectionId: string): Promise<any> {
+        try {
+            const clientInfo: any = {
+                connectionDetails: {
+                    connectedAt: new Date(),
+                    lastSeen: new Date()
+                }
+            };
+
+            // Get client info from WhatsApp Web
+            try {
+                const clientInfoData = await client.info;
+                if (clientInfoData) {
+                    clientInfo.phoneNumber = clientInfoData.wid?.user;
+                    clientInfo.platform = 'WhatsApp Web';
+                    
+                    // Extract phone details if available
+                    if (clientInfoData.pushname) {
+                        clientInfo.whatsappInfo = {
+                            profileName: clientInfoData.pushname,
+                            isBusiness: false, // Default to false, can be updated later
+                            isVerified: false // Default to false, can be updated later
+                        };
+                    }
+                }
+            } catch (infoError) {
+                console.warn(`[${connectionId}] Could not get client info:`, infoError);
+            }
+
+            // Try to get device info
+            try {
+                const deviceInfo = await client.getState();
+                if (deviceInfo) {
+                    clientInfo.platform = deviceInfo;
+                }
+            } catch (deviceError) {
+                console.warn(`[${connectionId}] Could not get device info:`, deviceError);
+            }
+
+            return clientInfo;
+        } catch (error) {
+            console.error(`[${connectionId}] Error capturing client info:`, error);
+            return {
+                connectionDetails: {
+                    connectedAt: new Date(),
+                    lastSeen: new Date()
+                }
+            };
         }
     }
 }

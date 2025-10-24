@@ -13,6 +13,30 @@ interface ApiResponse {
     createdAt: string
     lastActivity?: string
     name?: string
+    clientInfo?: {
+      phoneNumber?: string
+      platform?: string
+      phoneDetails?: {
+        manufacturer?: string
+        model?: string
+        osVersion?: string
+        appVersion?: string
+      }
+      whatsappInfo?: {
+        profileName?: string
+        profilePicture?: string
+        isBusiness?: boolean
+        isVerified?: boolean
+      }
+      connectionDetails?: {
+        ipAddress?: string
+        userAgent?: string
+        connectedAt?: string
+        lastSeen?: string
+      }
+    }
+    message?: string
+    needsRestore?: boolean
   }>
 }
 
@@ -36,6 +60,9 @@ export async function getConnections(apiKey: string): Promise<Connection[]> {
       createdAt: apiConnection.createdAt,
       lastActivity: apiConnection.lastActivity,
       name: apiConnection.name,
+      clientInfo: apiConnection.clientInfo,
+      message: apiConnection.message,
+      needsRestore: apiConnection.needsRestore,
     }))
 
     return connections

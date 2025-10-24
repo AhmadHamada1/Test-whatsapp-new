@@ -7,6 +7,7 @@ import { getConnections } from "@/services/get-connections"
 import { sendMessage as sendMessageApi } from "@/services/send-message"
 import { getMessages as getMessagesApi, type GetMessagesParams, type GetMessagesResponse } from "@/services/get-messages"
 import { disconnectConnection as disconnectConnectionApi } from "@/services/disconnection-connection"
+import { restoreConnection as restoreConnectionApi } from "@/services/restore-connection"
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined)
 
@@ -61,6 +62,24 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       await loadConnections()
     } catch (error) {
       console.error('Failed to disconnect connection:', error)
+      throw error
+    }
+  }
+
+  const restoreConnection = async (connectionId: string) => {
+    if (!apiKey) {
+      console.error("API key is required to restore connection")
+      return
+    }
+
+    try {
+      // Call the API to restore the connection
+      await restoreConnectionApi(connectionId, apiKey)
+      
+      // Reload connections from database to get updated state
+      await loadConnections()
+    } catch (error) {
+      console.error('Failed to restore connection:', error)
       throw error
     }
   }
@@ -164,6 +183,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
         connections,
         addConnectionFromApi,
         disconnectConnection,
+        restoreConnection,
         loadConnections,
         isLoadingConnections,
         connectionsError,

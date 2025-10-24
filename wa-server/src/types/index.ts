@@ -21,7 +21,7 @@ export interface Connection {
   name?: string;
 }
 
-export type ConnectionStatus = "requesting_qr" | "waiting_connection" | "connected" | "disconnected" | "error";
+export type ConnectionStatus = "ready" | "needs_restore" | "disconnected" | "expired";
 
 // Message Types
 export interface Message {

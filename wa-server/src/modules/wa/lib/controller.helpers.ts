@@ -178,7 +178,7 @@ export const generateConnectionId = (): string => {
  * Validate connection status
  */
 export const isValidConnectionStatus = (status: string): status is Connection['status'] => {
-  return ['connecting', 'connected', 'disconnected', 'error'].includes(status);
+  return ['ready', 'needs_restore', 'disconnected', 'expired'].includes(status);
 };
 
 /**

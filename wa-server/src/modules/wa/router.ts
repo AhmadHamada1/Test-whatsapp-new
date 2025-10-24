@@ -7,6 +7,7 @@ import {
   disconnectConnection,
   listConnections,
   reloadSessions,
+  restoreConnection,
 } from "./controllers";
 import { requireApiKey } from "../../middlewares/requireApiKey";
 
@@ -221,6 +222,72 @@ router.post('/connections', requireApiKey, addConnection);
  *               $ref: '#/components/schemas/Error'
  */
 router.delete('/connections/:id', requireApiKey, disconnectConnection);
+
+/**
+ * @swagger
+ * /v1/wa/connections/{id}/restore:
+ *   post:
+ *     summary: Restore a WhatsApp connection
+ *     description: Restores a specific WhatsApp connection that needs to be reconnected
+ *     tags: [Connections]
+ *     security:
+ *       - apiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Unique identifier for the connection
+ *         example: "507f1f77bcf86cd799439011"
+ *     responses:
+ *       200:
+ *         description: Connection restored successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         success:
+ *                           type: boolean
+ *                           example: true
+ *                         message:
+ *                           type: string
+ *                           example: "Connection restored successfully"
+ *                         status:
+ *                           type: string
+ *                           example: "needs_restore"
+ *       400:
+ *         description: Bad request - Connection already active or restore failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Invalid API key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Connection not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/connections/:id/restore', requireApiKey, restoreConnection);
 
 /**
  * @swagger

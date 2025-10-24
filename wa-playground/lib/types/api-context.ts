@@ -9,6 +9,7 @@ export interface ApiContextType {
   connections: Connection[]
   addConnectionFromApi: (connection: Connection) => void
   disconnectConnection: (connectionId: string) => Promise<void>
+  restoreConnection: (connectionId: string) => Promise<void>
   loadConnections: () => Promise<void>
   isLoadingConnections: boolean
   connectionsError: string | null

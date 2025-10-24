@@ -11,9 +11,16 @@ import {
   handleServiceError
 } from "../lib/controller.helpers";
 
+// Extended connection type for API responses
+interface ExtendedConnection extends Omit<Connection, 'status'> {
+  status: 'ready' | 'needs_restore' | 'disconnected' | 'expired';
+  message: string;
+  needsRestore: boolean;
+}
+
 export const getConnectionStatus = async (
   req: AuthenticatedRequest,
-  res: Response<ApiResponse<Connection>>
+  res: Response<ApiResponse<ExtendedConnection>>
 ): Promise<void> => {
   try {
     const apiKeyId = getApiKeyId(req);
@@ -24,15 +31,20 @@ export const getConnectionStatus = async (
     const connection = await ConnectionService.getConnectionById(id!, apiKeyId);
     if (!handleConnectionNotFound(connection, res)) return;
 
-    // Check real-time status from manager
-    const managerStatus = WhatsappManager.getConnectionStatus(id!);
-    if (!managerStatus.exists) {
-      // Session not found in manager, but exists in database
-      // This could mean the session was disconnected or never created
-      console.warn(`Session not found in manager for connection ${id}, but exists in database`);
-    }
+    // Get realistic status from manager
+    const realisticStatus = WhatsappManager.getRealisticStatus(id!);
+    
+    const transformed = transformConnection(connection);
+    
+    // Override with realistic status
+    const responseData = {
+      ...transformed,
+      status: realisticStatus.status,
+      message: realisticStatus.message,
+      needsRestore: realisticStatus.needsRestore
+    };
 
-    sendSuccess(res, "Connection status retrieved successfully", transformConnection(connection));
+    sendSuccess(res, "Connection status retrieved successfully", responseData);
   } catch (error) {
     handleServiceError(error, res, "retrieve connection status");
   }

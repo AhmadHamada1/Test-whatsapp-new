@@ -197,4 +197,31 @@ export class ConnectionService {
       throw new Error(`Failed to get connection stats: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
+
+  /**
+   * Update connection client information
+   */
+  static async updateConnectionClientInfo(
+    connectionId: string, 
+    apiKeyId: string, 
+    clientInfo: any
+  ): Promise<IConnection | null> {
+    try {
+      const connection = await Connection.findOneAndUpdate(
+        { 
+          _id: new mongoose.Types.ObjectId(connectionId),
+          apiKeyId: new mongoose.Types.ObjectId(apiKeyId) 
+        },
+        { 
+          clientInfo,
+          lastActivity: new Date()
+        },
+        { new: true }
+      );
+      
+      return connection ? connection.toObject() : null;
+    } catch (error) {
+      throw new Error(`Failed to update connection client info: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }

@@ -14,9 +14,9 @@ async function startServer(): Promise<void> {
     // Connect to database
     await connectToDatabase(config.MONGODB_URI);
 
-    // Reload past WhatsApp sessions
-    // console.log('Reloading past WhatsApp sessions...');
-    // await WhatsappManager.reloadPastSessions();
+    // Reload connection map without creating clients (for server restart)
+    console.log('Reloading connection map...');
+    await WhatsappManager.reloadMapOnly();
 
     // Start the server
     const server: Server = app.listen(config.PORT, () => {

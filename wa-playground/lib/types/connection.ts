@@ -1,5 +1,28 @@
 // Connection Types
-export type ConnectionStatus = "requesting_qr" | "waiting_connection" | "connected" | "disconnected" | "error"
+export type ConnectionStatus = "requesting_qr" | "waiting_connection" | "ready" | "needs_restore" | "disconnected" | "error"
+
+export interface ClientInfo {
+  phoneNumber?: string
+  platform?: string
+  phoneDetails?: {
+    manufacturer?: string
+    model?: string
+    osVersion?: string
+    appVersion?: string
+  }
+  whatsappInfo?: {
+    profileName?: string
+    profilePicture?: string
+    isBusiness?: boolean
+    isVerified?: boolean
+  }
+  connectionDetails?: {
+    ipAddress?: string
+    userAgent?: string
+    connectedAt?: string
+    lastSeen?: string
+  }
+}
 
 export interface Connection {
   connectionId: string
@@ -8,4 +31,7 @@ export interface Connection {
   createdAt: string
   lastActivity?: string
   name?: string
+  clientInfo?: ClientInfo
+  message?: string
+  needsRestore?: boolean
 }
