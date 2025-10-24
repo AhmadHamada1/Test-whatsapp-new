@@ -4,6 +4,7 @@ import morgan from "morgan";
 import cors from "./config/cors";
 import { errorHandler } from "./middlewares/errorHandler";
 import { specs, swaggerUi, swaggerOptions } from "./config/swagger";
+import { apiLoggingMiddleware } from "./modules/api-logs";
 import mainRouter from "./router";
 
 const app: Application = express();
@@ -16,6 +17,9 @@ app.use(cors);
 
 // Logging middleware
 app.use(morgan("combined"));
+
+// API logging middleware (for authenticated requests)
+app.use(apiLoggingMiddleware);
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
