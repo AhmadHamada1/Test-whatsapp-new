@@ -22,4 +22,6 @@ export interface ApiContextType {
   isLoadingMessages: boolean
   messagesError: string | null
   messagesStats: Record<string, GetMessagesResponse['stats']>
+  getLoadingState: (connectionId: string, action: string) => boolean
+  setLoadingState: (connectionId: string, action: string, isLoading: boolean) => void
 }

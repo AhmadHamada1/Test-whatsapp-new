@@ -23,6 +23,30 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   const [messagesError, setMessagesError] = useState<string | null>(null)
   const [messagesByConnection, setMessagesByConnection] = useState<Record<string, Message[]>>({})
   const [messagesStats, setMessagesStats] = useState<Record<string, GetMessagesResponse['stats']>>({})
+  
+  // Loading states for individual actions per connection
+  const [loadingStates, setLoadingStates] = useState<Record<string, {
+    isSendingMessage: boolean
+    isViewingMessages: boolean
+    isRestoring: boolean
+    isShowingQR: boolean
+    isDisconnecting: boolean
+  }>>({})
+
+  // Helper functions to manage loading states
+  const setLoadingState = (connectionId: string, action: string, isLoading: boolean) => {
+    setLoadingStates(prev => ({
+      ...prev,
+      [connectionId]: {
+        ...prev[connectionId],
+        [action]: isLoading
+      }
+    }))
+  }
+
+  const getLoadingState = (connectionId: string, action: string) => {
+    return loadingStates[connectionId]?.[action] || false
+  }
 
   // Load API key from localStorage on mount
   useEffect(() => {
@@ -54,6 +78,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    setLoadingState(connectionId, 'isDisconnecting', true)
     try {
       // Call the API to disconnect the connection
       await disconnectConnectionApi(connectionId, apiKey)
@@ -63,6 +88,8 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to disconnect connection:', error)
       throw error
+    } finally {
+      setLoadingState(connectionId, 'isDisconnecting', false)
     }
   }
 
@@ -72,6 +99,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    setLoadingState(connectionId, 'isRestoring', true)
     try {
       // Call the API to restore the connection
       await restoreConnectionApi(connectionId, apiKey)
@@ -81,6 +109,8 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to restore connection:', error)
       throw error
+    } finally {
+      setLoadingState(connectionId, 'isRestoring', false)
     }
   }
 
@@ -90,6 +120,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    setLoadingState(connectionId, 'isSendingMessage', true)
     setIsSendingMessage(true)
     setSendMessageError(null)
 
@@ -109,6 +140,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       console.error('Failed to send message:', error)
       throw error
     } finally {
+      setLoadingState(connectionId, 'isSendingMessage', false)
       setIsSendingMessage(false)
     }
   }
@@ -123,6 +155,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    setLoadingState(connectionId, 'isViewingMessages', true)
     setIsLoadingMessages(true)
     setMessagesError(null)
 
@@ -148,6 +181,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       console.error('Failed to load messages:', error)
       throw error
     } finally {
+      setLoadingState(connectionId, 'isViewingMessages', false)
       setIsLoadingMessages(false)
     }
   }
@@ -196,6 +230,8 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
         isLoadingMessages,
         messagesError,
         messagesStats,
+        getLoadingState,
+        setLoadingState,
       }}
     >
       {children}

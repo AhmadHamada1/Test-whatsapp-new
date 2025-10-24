@@ -18,12 +18,12 @@ export function ConnectionsList({ onSendMessage, onViewMessages }: ConnectionsLi
     restoreConnection,
     loadConnections,
     isLoadingConnections,
-    connectionsError
+    connectionsError,
+    getLoadingState
   } = useApi()
 
   const [qrDialogOpen, setQrDialogOpen] = useState(false)
   const [selectedConnection, setSelectedConnection] = useState<{ id: string; name?: string; qrCode?: string } | null>(null)
-  const [disconnectingConnections, setDisconnectingConnections] = useState<Set<string>>(new Set())
 
   const handleShowQR = (connection: { connectionId: string; name?: string; qrCode?: string }) => {
     setSelectedConnection({
@@ -48,17 +48,10 @@ export function ConnectionsList({ onSendMessage, onViewMessages }: ConnectionsLi
   }
 
   const handleDisconnect = async (connectionId: string) => {
-    setDisconnectingConnections(prev => new Set(prev).add(connectionId))
     try {
       await disconnectConnection(connectionId)
     } catch (error) {
       console.error('Failed to disconnect connection:', error)
-    } finally {
-      setDisconnectingConnections(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(connectionId)
-        return newSet
-      })
     }
   }
 
@@ -106,7 +99,11 @@ export function ConnectionsList({ onSendMessage, onViewMessages }: ConnectionsLi
           onDisconnect={handleDisconnect}
           onRestore={handleRestoreConnection}
           onShowQR={handleShowQR}
-          isDisconnecting={disconnectingConnections.has(connection.connectionId)}
+          isDisconnecting={getLoadingState(connection.connectionId, 'isDisconnecting')}
+          isSendingMessage={getLoadingState(connection.connectionId, 'isSendingMessage')}
+          isViewingMessages={getLoadingState(connection.connectionId, 'isViewingMessages')}
+          isRestoring={getLoadingState(connection.connectionId, 'isRestoring')}
+          isShowingQR={getLoadingState(connection.connectionId, 'isShowingQR')}
         />
       ))}
 

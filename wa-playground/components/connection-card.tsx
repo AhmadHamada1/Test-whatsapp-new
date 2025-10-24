@@ -15,6 +15,10 @@ interface ConnectionCardProps {
   onRestore: (connectionId: string) => void
   onShowQR: (connection: { connectionId: string; name?: string; qrCode?: string }) => void
   isDisconnecting: boolean
+  isSendingMessage?: boolean
+  isViewingMessages?: boolean
+  isRestoring?: boolean
+  isShowingQR?: boolean
 }
 
 export function ConnectionCard({
@@ -24,7 +28,11 @@ export function ConnectionCard({
   onDisconnect,
   onRestore,
   onShowQR,
-  isDisconnecting
+  isDisconnecting,
+  isSendingMessage = false,
+  isViewingMessages = false,
+  isRestoring = false,
+  isShowingQR = false
 }: ConnectionCardProps) {
 
   return (
@@ -58,6 +66,10 @@ export function ConnectionCard({
           onRestore={onRestore}
           onShowQR={onShowQR}
           isDisconnecting={isDisconnecting}
+          isSendingMessage={isSendingMessage}
+          isViewingMessages={isViewingMessages}
+          isRestoring={isRestoring}
+          isShowingQR={isShowingQR}
         />
       </CardContent>
     </Card>
