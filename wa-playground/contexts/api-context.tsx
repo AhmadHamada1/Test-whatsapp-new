@@ -6,6 +6,7 @@ import type { ApiContextType, Connection, Message, MessageStatus } from "@/lib/t
 import { getConnections } from "@/services/get-connections"
 import { sendMessage as sendMessageApi } from "@/services/send-message"
 import { getMessages as getMessagesApi, type GetMessagesParams, type GetMessagesResponse } from "@/services/get-messages"
+import { disconnectConnection as disconnectConnectionApi } from "@/services/disconnection-connection"
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined)
 
@@ -22,42 +23,46 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   const [messagesByConnection, setMessagesByConnection] = useState<Record<string, Message[]>>({})
   const [messagesStats, setMessagesStats] = useState<Record<string, GetMessagesResponse['stats']>>({})
 
-  // Load data from localStorage on mount
+  // Load API key from localStorage on mount
   useEffect(() => {
     const storedApiKey = localStorage.getItem("api_key")
-    if (storedApiKey) setApiKeyState(storedApiKey)
-    loadConnections()
+    if (storedApiKey) {
+      setApiKeyState(storedApiKey)
+      // Load connections from API when API key is available
+      loadConnections()
+    }
   }, [])
 
   const setApiKey = (key: string) => {
     setApiKeyState(key)
     localStorage.setItem("api_key", key)
-  }
-
-  const addConnection = (connection: Omit<Connection, "connectionId" | "createdAt">) => {
-    const newConnection: Connection = {
-      ...connection,
-      connectionId: Math.random().toString(36).substring(7),
-      createdAt: new Date().toISOString(),
-    }
-    const updatedConnections = [...connections, newConnection]
-    setConnections(updatedConnections)
-    localStorage.setItem("connections", JSON.stringify(updatedConnections))
+    // Load connections from API when API key is set
+    loadConnections()
   }
 
   // Function to add connection from API response (with real ID and timestamps)
   const addConnectionFromApi = (connection: Connection) => {
     const updatedConnections = [...connections, connection]
     setConnections(updatedConnections)
-    localStorage.setItem("connections", JSON.stringify(updatedConnections))
+    // No localStorage - connections are managed by the API
   }
 
-  const disconnectConnection = (connectionId: string) => {
-    const updatedConnections = connections.map((conn) =>
-      conn.connectionId === connectionId ? { ...conn, status: "disconnected" as const } : conn,
-    )
-    setConnections(updatedConnections)
-    localStorage.setItem("connections", JSON.stringify(updatedConnections))
+  const disconnectConnection = async (connectionId: string) => {
+    if (!apiKey) {
+      console.error("API key is required to disconnect connection")
+      return
+    }
+
+    try {
+      // Call the API to disconnect the connection
+      await disconnectConnectionApi(connectionId, apiKey)
+      
+      // Reload connections from database to get updated state
+      await loadConnections()
+    } catch (error) {
+      console.error('Failed to disconnect connection:', error)
+      throw error
+    }
   }
 
   const sendMessage = async (connectionId: string, phoneNumber: string, message: string) => {
@@ -71,12 +76,11 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Call the real API
-      const sentMessage = await sendMessageApi(connectionId, phoneNumber, message)
+      const sentMessage = await sendMessageApi(connectionId, phoneNumber, message, apiKey)
       
-      // Add the message to local state
+      // Add the message to local state (no localStorage)
       const updatedMessages = [...messages, sentMessage]
       setMessages(updatedMessages)
-      localStorage.setItem("messages", JSON.stringify(updatedMessages))
       
       return sentMessage
     } catch (error: any) {
@@ -104,7 +108,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
     setMessagesError(null)
 
     try {
-      const response = await getMessagesApi(connectionId, params)
+      const response = await getMessagesApi(connectionId, params, apiKey)
       
       // Update messages for this connection
       setMessagesByConnection(prev => ({
@@ -130,18 +134,23 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   }
 
   const loadConnections = async () => {
+    if (!apiKey) {
+      setConnectionsError("API key is required to load connections")
+      return
+    }
+
     setIsLoadingConnections(true)
     setConnectionsError(null)
     
     try {
-      const fetchedConnections = await getConnections()
+      const fetchedConnections = await getConnections(apiKey)
       console.log('Fetched connections:', fetchedConnections)
       setConnections(fetchedConnections)
     } catch (error) {
-      alert('Failed to load connections')
       console.error('Failed to load connections:', error)
       setConnectionsError(error instanceof Error ? error.message : 'Failed to load connections')
-      // Keep existing connections from localStorage if API fails
+      // Clear connections on error since we don't have localStorage fallback
+      setConnections([])
     } finally {
       setIsLoadingConnections(false)
     }
@@ -153,7 +162,6 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
         apiKey,
         setApiKey,
         connections,
-        addConnection,
         addConnectionFromApi,
         disconnectConnection,
         loadConnections,

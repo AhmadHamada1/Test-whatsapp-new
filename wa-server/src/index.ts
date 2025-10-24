@@ -7,16 +7,21 @@ import { Server } from "http";
 import app from "./app";
 import { connectToDatabase } from "./config/db";
 import config from "./config/env";
+import WhatsappManager from "./core/WhatsappManager";
 
 async function startServer(): Promise<void> {
   try {
     // Connect to database
     await connectToDatabase(config.MONGODB_URI);
 
+    // Reload past WhatsApp sessions
+    // console.log('Reloading past WhatsApp sessions...');
+    // await WhatsappManager.reloadPastSessions();
+
     // Start the server
     const server: Server = app.listen(config.PORT, () => {
-      console.log(`WhatsApp Server running on port ${config.PORT}`);
-      console.log(`Environment: ${config.NODE_ENV}`);
+      console.log(`🚀 WhatsApp Server running on port ${config.PORT}`);
+      console.log(`🌐 Environment: ${config.NODE_ENV}`);
     });
 
     // Graceful shutdown

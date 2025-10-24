@@ -24,7 +24,7 @@ export async function connectToDatabase(mongoUri: string): Promise<void> {
 
   try {
     await mongoose.connect(mongoUri, options);
-    console.log("MongoDB connected successfully");
+    console.log("💽 MongoDB connected successfully");
     
     // Handle connection events
     mongoose.connection.on('error', (err) => {

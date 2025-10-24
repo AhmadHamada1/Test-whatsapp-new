@@ -19,7 +19,7 @@ import { Plus, QrCode, Loader2 } from "lucide-react"
 import { addNewConnection } from "@/services/add-new-connection"
 
 export function AddConnectionDialog() {
-  const { addConnectionFromApi } = useApi()
+  const { addConnectionFromApi, apiKey } = useApi()
   const [open, setOpen] = useState(false)
   const [connectionName, setConnectionName] = useState("")
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
@@ -34,7 +34,7 @@ export function AddConnectionDialog() {
 
     try {
       // Call the API to create a new connection
-      const connection = await addNewConnection(connectionName)
+      const connection = await addNewConnection(connectionName, apiKey!)
       
       // Set the QR code from the API response
       if (connection.qrCode) {

@@ -4,8 +4,10 @@ import { useApi } from "@/contexts/api-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Smartphone, Power, MessageSquare, History, Loader2, AlertCircle, RefreshCw } from "lucide-react"
+import { Smartphone, Power, MessageSquare, History, Loader2, AlertCircle, RefreshCw, QrCode } from "lucide-react"
 import type { ConnectionStatus } from "@/lib/types"
+import { QRCodeDialog } from "./qr-code-dialog"
+import { useState } from "react"
 
 interface ConnectionsListProps {
   onSendMessage: (connectionId: string) => void
@@ -20,6 +22,40 @@ export function ConnectionsList({ onSendMessage, onViewMessages }: ConnectionsLi
     isLoadingConnections, 
     connectionsError 
   } = useApi()
+
+  const [qrDialogOpen, setQrDialogOpen] = useState(false)
+  const [selectedConnection, setSelectedConnection] = useState<{ id: string; name?: string; qrCode?: string } | null>(null)
+  const [disconnectingConnections, setDisconnectingConnections] = useState<Set<string>>(new Set())
+
+  const handleShowQR = (connection: { connectionId: string; name?: string; qrCode?: string }) => {
+    setSelectedConnection({
+      id: connection.connectionId,
+      name: connection.name,
+      qrCode: connection.qrCode
+    })
+    setQrDialogOpen(true)
+  }
+
+  const handleCloseQR = () => {
+    setQrDialogOpen(false)
+    setSelectedConnection(null)
+  }
+
+  const handleDisconnect = async (connectionId: string) => {
+    setDisconnectingConnections(prev => new Set(prev).add(connectionId))
+    try {
+      await disconnectConnection(connectionId)
+    } catch (error) {
+      console.error('Failed to disconnect connection:', error)
+      // You could add a toast notification here to show the error
+    } finally {
+      setDisconnectingConnections(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(connectionId)
+        return newSet
+      })
+    }
+  }
 
   const getStatusColor = (status: ConnectionStatus) => {
     switch (status) {
@@ -116,25 +152,77 @@ export function ConnectionsList({ onSendMessage, onViewMessages }: ConnectionsLi
                     <History className="h-4 w-4 mr-2" />
                     View Messages
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => disconnectConnection(connection.connectionId)}>
-                    <Power className="h-4 w-4 mr-2" />
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => handleDisconnect(connection.connectionId)}
+                    disabled={disconnectingConnections.has(connection.connectionId)}
+                  >
+                    {disconnectingConnections.has(connection.connectionId) ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Power className="h-4 w-4 mr-2" />
+                    )}
                     Disconnect
                   </Button>
                 </>
               )}
               {(connection.status === "requesting_qr" || connection.status === "waiting_connection") && (
-                <p className="text-sm text-muted-foreground">Scan QR code to activate this connection</p>
+                <>
+                  <p className="text-sm text-muted-foreground">Scan QR code to activate this connection</p>
+                  <Button size="sm" variant="outline" onClick={() => handleShowQR(connection)}>
+                    <QrCode className="h-4 w-4 mr-2" />
+                    Scan QR Code
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => handleDisconnect(connection.connectionId)}
+                    disabled={disconnectingConnections.has(connection.connectionId)}
+                  >
+                    {disconnectingConnections.has(connection.connectionId) ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Power className="h-4 w-4 mr-2" />
+                    )}
+                    Disconnect
+                  </Button>
+                </>
               )}
               {connection.status === "disconnected" && (
                 <p className="text-sm text-muted-foreground">Connection inactive</p>
               )}
               {connection.status === "error" && (
-                <p className="text-sm text-muted-foreground">Connection error - please try reconnecting</p>
+                <>
+                  <p className="text-sm text-muted-foreground">Connection error - please try reconnecting</p>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => handleDisconnect(connection.connectionId)}
+                    disabled={disconnectingConnections.has(connection.connectionId)}
+                  >
+                    {disconnectingConnections.has(connection.connectionId) ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Power className="h-4 w-4 mr-2" />
+                    )}
+                    Disconnect
+                  </Button>
+                </>
               )}
             </div>
           </CardContent>
         </Card>
       ))}
+      
+      {/* QR Code Dialog */}
+      <QRCodeDialog
+        connectionId={selectedConnection?.id || ""}
+        connectionName={selectedConnection?.name}
+        qrCodeUrl={selectedConnection?.qrCode}
+        isOpen={qrDialogOpen}
+        onClose={handleCloseQR}
+      />
     </div>
   )
 }

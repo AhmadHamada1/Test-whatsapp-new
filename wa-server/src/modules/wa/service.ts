@@ -20,6 +20,20 @@ export class ConnectionService {
   }
 
   /**
+   * Get all connections (for session restoration)
+   */
+  static async getAllConnections(): Promise<IConnection[]> {
+    try {
+      const connections = await Connection.find({})
+        .sort({ createdAt: -1 });
+      
+      return connections.map(conn => conn.toObject());
+    } catch (error) {
+      throw new Error(`Failed to fetch all connections: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
    * Get a specific connection by ID and API key
    */
   static async getConnectionById(connectionId: string, apiKeyId: string): Promise<IConnection | null> {
@@ -27,6 +41,21 @@ export class ConnectionService {
       const connection = await Connection.findOne({ 
         _id: new mongoose.Types.ObjectId(connectionId),
         apiKeyId: new mongoose.Types.ObjectId(apiKeyId) 
+      });
+      
+      return connection ? connection.toObject() : null;
+    } catch (error) {
+      throw new Error(`Failed to fetch connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Get a specific connection by ID only (for internal use)
+   */
+  static async getConnectionByIdOnly(connectionId: string): Promise<IConnection | null> {
+    try {
+      const connection = await Connection.findOne({ 
+        _id: new mongoose.Types.ObjectId(connectionId)
       });
       
       return connection ? connection.toObject() : null;

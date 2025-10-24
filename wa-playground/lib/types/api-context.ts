@@ -7,9 +7,8 @@ export interface ApiContextType {
   apiKey: string | null
   setApiKey: (key: string) => void
   connections: Connection[]
-  addConnection: (connection: Omit<Connection, "connectionId" | "createdAt">) => void
   addConnectionFromApi: (connection: Connection) => void
-  disconnectConnection: (connectionId: string) => void
+  disconnectConnection: (connectionId: string) => Promise<void>
   loadConnections: () => Promise<void>
   isLoadingConnections: boolean
   connectionsError: string | null

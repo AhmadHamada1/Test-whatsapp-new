@@ -16,10 +16,14 @@ interface ApiResponse {
   }>
 }
 
-export async function getConnections(): Promise<Connection[]> {
+export async function getConnections(apiKey: string): Promise<Connection[]> {
   try {
-    const response = await axiosInstance.get<ApiResponse>('/connections')
-    
+    const response = await axiosInstance.get<ApiResponse>('/connections', {
+      headers: {
+        'x-api-key': apiKey,
+      },
+    })
+
     if (!response.data.success) {
       throw new Error(response.data.message || 'Failed to fetch connections')
     }

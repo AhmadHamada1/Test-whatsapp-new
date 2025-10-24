@@ -6,6 +6,7 @@ import {
   getMessages,
   disconnectConnection,
   listConnections,
+  reloadSessions,
 } from "./controllers";
 import { requireApiKey } from "../../middlewares/requireApiKey";
 
@@ -422,5 +423,104 @@ router.post('/connections/:id/message', requireApiKey, sendMessage);
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/connections/:id/messages', requireApiKey, getMessages);
+
+/**
+ * @swagger
+ * /v1/wa/sessions/reload:
+ *   post:
+ *     summary: Reload all past WhatsApp sessions
+ *     description: Manually trigger reloading of all previously connected WhatsApp sessions
+ *     tags: [Sessions]
+ *     security:
+ *       - apiKeyAuth: []
+ *     responses:
+ *       200:
+ *         description: Sessions reloaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         message:
+ *                           type: string
+ *                           example: "Reloaded 3 sessions"
+ *                         reloadedCount:
+ *                           type: number
+ *                           example: 3
+ *       401:
+ *         description: Unauthorized - Invalid API key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/sessions/reload', requireApiKey, reloadSessions);
+
+/**
+ * @swagger
+ * /v1/wa/sessions/reload/{connectionId}:
+ *   post:
+ *     summary: Reload a specific WhatsApp session
+ *     description: Manually trigger reloading of a specific WhatsApp session by connection ID
+ *     tags: [Sessions]
+ *     security:
+ *       - apiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: connectionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The connection ID of the session to reload
+ *     responses:
+ *       200:
+ *         description: Session reloaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         message:
+ *                           type: string
+ *                           example: "Session 64f8a1b2c3d4e5f6a7b8c9d0 reloaded successfully"
+ *                         success:
+ *                           type: boolean
+ *                           example: true
+ *       400:
+ *         description: Bad request - Connection not found or reload failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Invalid API key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/sessions/reload/:connectionId', requireApiKey, reloadSessions);
 
 export default router;

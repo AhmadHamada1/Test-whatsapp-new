@@ -29,7 +29,8 @@ export interface GetMessagesParams {
 
 export async function getMessages(
   connectionId: string,
-  params: GetMessagesParams = {}
+  params: GetMessagesParams = {},
+  apiKey: string
 ): Promise<GetMessagesResponse> {
   try {
     const queryParams = new URLSearchParams()
@@ -42,7 +43,11 @@ export async function getMessages(
     const queryString = queryParams.toString()
     const url = `/connections/${connectionId}/messages${queryString ? `?${queryString}` : ''}`
     
-    const response = await axiosInstance.get(url)
+    const response = await axiosInstance.get(url, {
+      headers: {
+        'x-api-key': apiKey,
+      },
+    })
 
     // The API returns { success: true, message: string, data: GetMessagesResponse }
     if (response.data.success && response.data.data) {

@@ -13,32 +13,11 @@ const axiosInstance: AxiosInstance = axios.create({
   },
 })
 
-// Function to get API key from localStorage (client-side)
-const getApiKeyFromStorage = (): string | null => {
-  if (typeof window !== 'undefined') {
-    // Client-side: get from localStorage
-    const storedKey = localStorage.getItem('api_key')
-    if (storedKey) {
-      return storedKey
-    }
-    // Fallback to test API key for development
-    return 'test-api-key-12345'
-  }
-  return 'test-api-key-12345'
-}
-
-// Request interceptor for logging, error handling, and automatic API key injection
+// Request interceptor for logging and error handling
 axiosInstance.interceptors.request.use(
   (config) => {
     console.log(`[Axios] ${config.method?.toUpperCase()} ${config.url}`)
-    
-    // Automatically add API key if not already present
-    if (!config.headers['x-api-key']) {
-      const apiKey = getApiKeyFromStorage()
-      if (apiKey) {
-        config.headers['x-api-key'] = apiKey
-      }
-    }
+    console.log("config:", config.headers)
     
     return config
   },
@@ -60,6 +39,7 @@ axiosInstance.interceptors.response.use(
     
     // Handle different error types
     if (error.response) {
+      console.log("error.response:", error.response)
       // Server responded with error status
       const errorMessage = error.response.data?.error || `HTTP ${error.response.status}`
       throw new Error(errorMessage)

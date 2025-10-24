@@ -18,10 +18,15 @@ interface ApiResponse {
 
 export async function addNewConnection(
   name: string,
+  apiKey: string
 ): Promise<Connection> {
   try {
     const response = await axiosInstance.post<ApiResponse>('/connections', {
       name
+    }, {
+      headers: {
+        'x-api-key': apiKey,
+      },
     })
 
     const apiData = response.data.data
