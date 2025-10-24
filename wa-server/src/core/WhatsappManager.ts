@@ -2,17 +2,15 @@ import { Client, LocalAuth } from 'whatsapp-web.js';
 import QRCode from 'qrcode';
 import { ConnectionService } from '../modules/wa/service';
 import { IConnection } from '../modules/wa/model';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface ActiveClient {
     id: string;
-    client: Client;
     status: 'qr_pending' | 'ready' | 'disconnected' | 'restoring';
+    client: Client;
     qr?: string;
 }
-
-// Strategy, we need a status on the connection
-// if the connection is not ready, the user first needs to activate the connection
-// when the connection is ready, the user can send messages
 
 class WhatsappManager {
     private static instance: WhatsappManager;
@@ -89,6 +87,7 @@ class WhatsappManager {
         if (active.status !== 'ready') {
             throw new Error(`Client not ready. Current status: ${active.status}`);
         }
+        console.log("connection status", active);
         return active.client.sendMessage(to, message);
     }
 
@@ -98,8 +97,22 @@ class WhatsappManager {
         if (!active) {
             throw new Error(`Session not found for connection ID: ${connectionId}`);
         }
-        await active.client.destroy();
+
+        try {
+            // Destroy the client first
+            await active.client.destroy();
+            console.log(`[${connectionId}] Client destroyed successfully`);
+        } catch (error) {
+            console.error(`[${connectionId}] Error destroying client:`, error);
+        }
+
+        // Remove from clients map
         this.clients.delete(connectionId);
+
+        // Delete session cache and auth data
+        await this.deleteSessionData(connectionId);
+
+        console.log(`[${connectionId}] Disconnected and cleaned up session data`);
     }
 
     /** Get connection status */
@@ -129,12 +142,12 @@ class WhatsappManager {
     async reloadPastSessions(): Promise<void> {
         try {
             console.log('Starting to reload past sessions...');
-            
+
             // Get all connections that were previously connected
             const connections = await ConnectionService.getAllConnections();
-            
+
             console.log(`Found ${connections.length} past connections to reload`);
-            
+
             for (const connection of connections) {
                 // Only reload connections that were previously connected
                 if (connection.status === 'connected') {
@@ -149,14 +162,14 @@ class WhatsappManager {
                         console.error(`Failed to restore session ${connectionId}:`, error);
                         // Update status to disconnected if restoration fails
                         await ConnectionService.updateConnectionStatus(
-                            connectionId, 
-                            apiKeyId, 
+                            connectionId,
+                            apiKeyId,
                             'disconnected'
                         );
                     }
                 }
             }
-            
+
             console.log('Finished reloading past sessions');
         } catch (error) {
             console.error('Error reloading past sessions:', error);
@@ -167,13 +180,13 @@ class WhatsappManager {
     async reloadSession(connectionId: string): Promise<{ success: boolean; message: string }> {
         try {
             console.log(`Reloading specific session: ${connectionId}`);
-            
+
             // First, check if session already exists and disconnect it
             if (this.clients.has(connectionId)) {
                 console.log(`Session ${connectionId} already exists, disconnecting first...`);
                 await this.disconnect(connectionId);
             }
-            
+
             // Get connection details from database
             const connection = await ConnectionService.getConnectionByIdOnly(connectionId);
             if (!connection) {
@@ -182,10 +195,10 @@ class WhatsappManager {
                     message: `Connection ${connectionId} not found in database`
                 };
             }
-            
+
             // Restore the session
             await this.restoreSession(connectionId, (connection.apiKeyId as any).toString());
-            
+
             return {
                 success: true,
                 message: `Session ${connectionId} reloaded successfully`
@@ -210,7 +223,7 @@ class WhatsappManager {
             }
 
             console.log(`Restoring session: ${connectionId}`);
-            
+
             const client = new Client({
                 authStrategy: new LocalAuth({ clientId: connectionId }),
                 puppeteer: { headless: true, args: ['--no-sandbox'] },
@@ -235,13 +248,13 @@ class WhatsappManager {
                     session.status = 'disconnected';
                     console.error(`[${connectionId}] Failed to update database:`, error);
                 }
-                
+
                 resolve();
             });
 
             client.on('disconnected', async () => {
                 console.log(`[${connectionId}] Restored session disconnected`);
-                
+
                 // Update database with disconnected status
                 try {
                     await ConnectionService.updateConnectionStatus(connectionId, apiKeyId, 'disconnected');
@@ -259,10 +272,10 @@ class WhatsappManager {
             });
 
             // Add session to clients map with 'restoring' status
-            this.clients.set(connectionId, { 
-                id: connectionId, 
-                client, 
-                status: 'restoring' 
+            this.clients.set(connectionId, {
+                id: connectionId,
+                client,
+                status: 'restoring'
             });
 
             // Initialize the client
@@ -281,6 +294,29 @@ class WhatsappManager {
         } catch (error) {
             console.error('Error fetching past sessions:', error);
             return [];
+        }
+    }
+
+    /** Helper function to delete session cache and auth data */
+    private async deleteSessionData(connectionId: string): Promise<void> {
+        try {
+            const authDir = path.join(process.cwd(), '.wwebjs_auth', `session-${connectionId}`);
+            const cacheDir = path.join(process.cwd(), '.wwebjs_cache', `session-${connectionId}`);
+
+            // Delete auth directory if it exists
+            if (fs.existsSync(authDir)) {
+                fs.rmSync(authDir, { recursive: true, force: true });
+                console.log(`[${connectionId}] Deleted auth directory: ${authDir}`);
+            }
+
+            // Delete cache directory if it exists
+            if (fs.existsSync(cacheDir)) {
+                fs.rmSync(cacheDir, { recursive: true, force: true });
+                console.log(`[${connectionId}] Deleted cache directory: ${cacheDir}`);
+            }
+        } catch (error) {
+            console.error(`[${connectionId}] Error deleting session data:`, error);
+            // Don't throw error here as we still want to disconnect the client
         }
     }
 }
