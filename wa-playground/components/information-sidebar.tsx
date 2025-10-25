@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, Clock, FileText, MessageSquare, Settings, Zap, ChevronDown, ChevronUp } from "lucide-react"
+import { CheckCircle, Clock, FileText, MessageSquare, Settings, Zap, ChevronDown, ChevronUp, LayoutDashboardIcon } from "lucide-react"
 import { useState } from "react"
 
 interface InformationSidebarProps {
@@ -99,6 +99,14 @@ export function InformationSidebar({ open, onOpenChange }: InformationSidebarPro
         "1st week: 1 message per minute",
         "2nd week: 2 messages per minute",
         "3rd week onwards: 3 messages per minute"
+      ]
+    },
+    {
+      title: "Playground improvements",
+      icon: LayoutDashboardIcon,
+      items: [
+        "Long polling on the QR code generation",
+        "Ability to establish connection where status is WaitingConnection"
       ]
     },
     {
