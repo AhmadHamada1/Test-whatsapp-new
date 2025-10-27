@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  wa-server-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: wa-server-dev
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=development
+      - PORT=4001
+      - MONGODB_URI=${MONGODB_URI}
+      - API_KEY_SECRET=${API_KEY_SECRET}
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./package.json:/app/package.json
+      # Persist WhatsApp session data
+      - wa-sessions-dev:/app/.wwebjs_auth
+      - wa-cache-dev:/app/.wwebjs_cache
+      # Mount logs directory
+      - ./logs:/app/logs
+    networks:
+      - wa-network-dev
+    command: npm run dev
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  wa-sessions-dev:
+    driver: local
+  wa-cache-dev:
+    driver: local
+
+networks:
+  wa-network-dev:
+    driver: bridge

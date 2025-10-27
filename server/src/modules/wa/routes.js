@@ -1,114 +1,81 @@
 "use strict";
 
 const { Router } = require("express");
-const { validate } = require("../../core/middleware/validate");
-const { requireApiKey } = require("../../core/middleware/requireApiKey");
-const { addNumberHandler, sendTextHandler, sendMediaHandler, sendHandler } = require("./controller");
-const { sendTextSchema, sendMediaSchema, sendSchema } = require("./validators");
+const { requireAdminJwt } = require("../../core/middleware/requireAdminJwt");
+const { createApiLogger } = require("../../core/middleware/apiLogger");
+const { listConnectionsAdminHandler } = require("./controller");
 
 const router = Router();
 
-/**
- * @openapi
- * /wa/add-number:
- *   post:
- *     summary: Start WhatsApp client and retrieve QR code for pairing
- *     tags: [WhatsApp]
- *     responses:
- *       200:
- *         description: QR code for pairing (or already connected)
- */
-router.post("/add-number", requireApiKey, addNumberHandler);
+// Apply API logging middleware to all routes
+router.use(createApiLogger());
 
 /**
  * @openapi
- * /wa/send-text:
- *   post:
- *     summary: Send a text message
+ * /wa/monitor/connections/{apiKeyId}:
+ *   get:
+ *     summary: List all WhatsApp connections for a specific API key (Admin)
  *     tags: [WhatsApp]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               to:
- *                 type: string
- *               text:
- *                 type: string
- *             required: [to, text]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: apiKeyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: API key ID
  *     responses:
  *       200:
- *         description: Message sent
+ *         description: List of connections
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       status:
+ *                         type: string
+ *                         enum: [pending, ready, disconnected]
+ *                       lastQrAt:
+ *                         type: string
+ *                         format: date-time
+ *                       readyAt:
+ *                         type: string
+ *                         format: date-time
+ *                       disconnectedAt:
+ *                         type: string
+ *                         format: date-time
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                       accountInfo:
+ *                         type: object
+ *                         properties:
+ *                           phoneNumber:
+ *                             type: string
+ *                           whatsappId:
+ *                             type: string
+ *                           profileName:
+ *                             type: string
+ *                           platform:
+ *                             type: string
+ *                           profilePictureUrl:
+ *                             type: string
+ *                           statusMessage:
+ *                             type: string
+ *                           lastSeen:
+ *                             type: string
+ *                             format: date-time
  */
-router.post("/send-text", requireApiKey, validate(sendTextSchema), sendTextHandler);
-
-/**
- * @openapi
- * /wa/send-media:
- *   post:
- *     summary: Send a media message (image or file)
- *     tags: [WhatsApp]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               to:
- *                 type: string
- *               media:
- *                 type: object
- *                 properties:
- *                   mimetype:
- *                     type: string
- *                   filename:
- *                     type: string
- *                   dataBase64:
- *                     type: string
- *                 required: [mimetype, filename, dataBase64]
- *             required: [to, media]
- *     responses:
- *       200:
- *         description: Media sent
- */
-router.post("/send-media", requireApiKey, validate(sendMediaSchema), sendMediaHandler);
-
-/**
- * @openapi
- * /wa/send:
- *   post:
- *     summary: Send a message (text or media)
- *     tags: [WhatsApp]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               to:
- *                 type: string
- *               text:
- *                 type: string
- *               media:
- *                 type: object
- *                 properties:
- *                   mimetype:
- *                     type: string
- *                   filename:
- *                     type: string
- *                   dataBase64:
- *                     type: string
- *             required: [to]
- *     responses:
- *       200:
- *         description: Message sent
- */
-router.post("/send", requireApiKey, validate(sendSchema), sendHandler);
+router.get("/monitor/connections/:apiKeyId", requireAdminJwt, listConnectionsAdminHandler);
 
 module.exports = router;
-
-

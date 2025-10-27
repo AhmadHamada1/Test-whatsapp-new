@@ -4,7 +4,7 @@ const { sha256 } = require("../utils/crypto");
 const { ApiKey } = require("../../modules/api-keys/model");
 
 async function requireApiKey(req, res, next) {
-  try {
+  try {    
     const headerKey = req.header("x-api-key");
     if (!headerKey) return next({ status: 401, message: "Missing API key" });
 
@@ -15,7 +15,6 @@ async function requireApiKey(req, res, next) {
     apiKey.usageCount = (apiKey.usageCount || 0) + 1;
     apiKey.lastUsedAt = new Date();
     await apiKey.save();
-
     req.apiKey = apiKey;
     next();
   } catch (err) {
@@ -24,5 +23,3 @@ async function requireApiKey(req, res, next) {
 }
 
 module.exports = { requireApiKey };
-
-

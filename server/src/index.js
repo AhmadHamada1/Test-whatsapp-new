@@ -11,10 +11,10 @@ const { createApp } = require("./app");
 
     const app = createApp();
     app.listen(PORT, () => {
-      console.log(`API listening on http://localhost:${PORT}`);
+      console.log(`Core server listening on http://localhost:${PORT}`);
     });
   } catch (err) {
-    console.error("Failed to start server", err);
+    console.error("Failed to start core server", err);
     process.exit(1);
   }
 })();

@@ -10,6 +10,51 @@ const { errorHandler } = require("./core/middleware/errorHandler");
 const swaggerUi = require("swagger-ui-express");
 const { swaggerSpec } = require("./config/swagger");
 
+function setupSwaggerDocs(app) {
+  // Merge both API specs into one
+  const mergedSpec = {
+    openapi: "3.0.0",
+    info: {
+      title: "WhatsApp Bot API",
+      version: "1.0.0",
+      description: "Complete API documentation for WhatsApp Bot - includes Admin management and monitoring APIs"
+    },
+    servers: [
+      { url: "http://localhost:4000" },
+      { url: "https://whatsapp-webjs-wrapper-bot-server.chillkro.com" }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "JWT token for admin authentication"
+        },
+      }
+    },
+    tags: [
+      {
+        name: "Admin",
+        description: "Admin API for managing API keys, users, and system administration"
+      },
+      {
+        name: "Health",
+        description: "Health check endpoints"
+      }
+    ],
+    paths: {
+      ...swaggerSpec.paths,
+    }
+  };
+
+  // Single Swagger UI endpoint
+  app.use("/docs", swaggerUi.serve, swaggerUi.setup(mergedSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: "WhatsApp Bot API Documentation"
+  }));
+}
+
 function createApp() {
   const app = express();
   // app.set("trust proxy", 1);
@@ -22,32 +67,22 @@ function createApp() {
     req.id = nanoid(8);
     next();
   });
-  // // Explicit console log when a request is reached
-  // app.use((req, res, next) => {
-  //   // originalUrl preserves mount path
-  //   console.log(`${req.id} -> ${req.method} ${req.originalUrl}`);
-  //   next();
-  // });
-  // Log when a request is received (reached)
-  // app.use(morgan(":id -> :method :url", { immediate: true }));
+
   // // Log when a request completes
   app.use(morgan(":id <- :method :url :status :res[content-length] - :response-time ms"));
   app.use(createCorsMiddleware());
+
   // Support application/x-www-form-urlencoded (e.g., Postman form-data)
   app.use(express.urlencoded({ extended: true }));
+
   // Support application/json
   app.use(express.json({ limit: "1mb" }));
 
-  // Swagger first so it is always reachable
-  app.get("/docs.json", (req, res) => {
-    res.setHeader("Content-Type", "application/json");
-    res.send(swaggerSpec);
-  });
-  app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  
+  // Setup Swagger documentation
+  setupSwaggerDocs(app);
+
   // Mount routes at both root and /api to avoid 404s when using /api prefix
   app.use(routes);
-  app.use("/api", routes);
 
   // Handle 404 requests
   app.use((req, res) => {

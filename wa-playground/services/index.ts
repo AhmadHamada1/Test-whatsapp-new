@@ -1,0 +1,8 @@
+export { verifyApiKey } from './verify-api-key'
+export { addNewConnection } from './add-new-connection'
+export { getConnections } from './get-connections'
+export { getConnectionStatus } from './get-connection-status'
+export { disconnectConnection } from './disconnection-connection'
+export { restoreConnection } from './restore-connection'
+export { sendMessage } from './send-message'
+export { getMessages } from './get-messages'
