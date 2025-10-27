@@ -148,8 +148,7 @@ export class ClientManager {
         if (cleanedTo.startsWith("+")) cleanedTo = cleanedTo.slice(1);
         if (!cleanedTo.endsWith("@c.us")) cleanedTo = `${cleanedTo}@c.us`;
 
-
-        // sends typing indicator for 25 seconds
+        // TODO: sends typing indicator for 25 seconds x message type ETA
         // return active.client.sendStateTyping();
 
         return active.client.sendMessage(cleanedTo, message);

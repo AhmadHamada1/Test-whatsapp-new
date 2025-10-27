@@ -7,7 +7,6 @@ import { Server } from "http";
 import app from "./app";
 import { connectToDatabase } from "./config/db";
 import config from "./config/env";
-import WhatsappManager from "./core/WhatsappManager";
 
 async function startServer(): Promise<void> {
   try {

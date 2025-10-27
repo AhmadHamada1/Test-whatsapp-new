@@ -16,13 +16,13 @@ export class EventHandler {
     async handleQREvent(connectionId: string, qr: string): Promise<string> {
         const QRCode = await import('qrcode');
         const qrImage = await QRCode.toDataURL(qr);
-        
+
         const session = this.clients.get(connectionId);
         if (session) {
             session.qr = qrImage;
             session.status = CONNECTION_STATUS.WAITING_CONNECTION;
         }
-        
+
         return qrImage;
     }
 
@@ -31,20 +31,20 @@ export class EventHandler {
      */
     async handleReadyEvent(connectionId: string, client: Client, apiKeyId: string): Promise<void> {
         console.log(`[${connectionId}] connected`);
-        
+
         const session = this.clients.get(connectionId);
         if (!session) {
             console.error(`[${connectionId}] Session not found in ready event`);
             return;
         }
 
-                session.status = CONNECTION_STATUS.READY;
+        session.status = CONNECTION_STATUS.READY;
 
         // Update database with connected status
         try {
             await ConnectionService.updateConnectionStatus(connectionId, apiKeyId, CONNECTION_STATUS.READY);
             console.log(`[${connectionId}] Database updated: connected`);
-            
+
             // Capture and save client information
             try {
                 const clientInfo = await this.captureClientInfo(client, connectionId);
@@ -58,10 +58,10 @@ export class EventHandler {
                 console.warn(`[${connectionId}] Failed to save client info:`, clientInfoError);
                 // Don't fail the connection if client info capture fails
             }
-                } catch (error) {
-                    session.status = CONNECTION_STATUS.WAITING_CONNECTION;
-                    console.error(`[${connectionId}] Failed to update database:`, error);
-                }
+        } catch (error) {
+            session.status = CONNECTION_STATUS.WAITING_CONNECTION;
+            console.error(`[${connectionId}] Failed to update database:`, error);
+        }
     }
 
     /**
@@ -107,7 +107,7 @@ export class EventHandler {
                 if (clientInfoData) {
                     clientInfo.phoneNumber = clientInfoData.wid?.user;
                     clientInfo.platform = 'WhatsApp Web';
-                    
+
                     // Extract phone details if available
                     if (clientInfoData.pushname) {
                         clientInfo.whatsappInfo = {

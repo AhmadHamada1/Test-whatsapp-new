@@ -34,10 +34,10 @@ class WhatsappManager {
 
             client.on('ready', async () => {
                 await eventHandler.handleReadyEvent(connectionId, client, apiKeyId);
-                console.log("client ready", client.info.wid.user.trim());
-                setTimeout(() => {
-                    client.sendMessage(`${client.info.wid.user.trim()}@c.us`, "Hello");
-                }, 2800)
+                // console.log("client ready", client.info.wid.user.trim());
+                // setTimeout(() => {
+                //     client.sendMessage(`${client.info.wid.user.trim()}@c.us`, "Hello");
+                // }, 2800)
             });
 
             client.on('disconnected', async () => {
