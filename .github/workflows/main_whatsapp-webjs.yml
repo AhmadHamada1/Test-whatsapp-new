@@ -1,38 +1,37 @@
-name: Build & Deploy Next.js SSR to Azure Web App
+name: Deploy Next.js to Azure Web App
 
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - main  # أو الفرع اللي عايز تدفع منه
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20.x'
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'  # نفس نسخة Azure Node.js
 
-      - name: Install dependencies
-        run: |
-          cd web
-          npm install --legacy-peer-deps
+    - name: Install dependencies
+      run: |
+        cd web
+        yarn install --frozen-lockfile
 
-      - name: Build Next.js app
-        run: |
-          cd web
-          npm run build
+    - name: Build Next.js app
+      run: |
+        cd web
+        yarn build
 
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'whatsapp-webjs'
-          slot-name: 'Production'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ./web
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: 'whatsapp-webjs'  # غيره باسم app بتاعك
+        slot-name: 'Production'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ./web
