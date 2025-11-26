@@ -41,10 +41,17 @@ jobs:
         with:
           name: nextjs-app
 
-      - name: Deploy to Azure Web App using Publish Profile
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F20747F93EC74982B23B972006119A99 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F16C1D79A4DD44479C993F75F9F5BFB6 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6DF78DE128154093A71029A00FB51835 }}
+
+      # 3️⃣ Deploy to Azure Web App
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'whatsapp-webjs'
+          app-name: 'whatsapp-webjs'        # اسم Web App
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: nextjs-app/
+          package: ./nextjs-app-folder  
