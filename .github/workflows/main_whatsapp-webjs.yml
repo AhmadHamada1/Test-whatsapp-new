@@ -35,7 +35,7 @@ jobs:
           cd web
           npm run build
 
-      # 5️⃣ Upload artifact (whole folder, including package.json, .next, node_modules)
+      # 5️⃣ Upload artifact (whole folder including package.json, .next, node_modules)
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -55,6 +55,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: nextjs-app
+          path: ./nextjs-app-folder   # هينزل artifact هنا
 
       # 2️⃣ Login to Azure
       - name: Azure Login
@@ -64,12 +65,10 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F16C1D79A4DD44479C993F75F9F5BFB6 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6DF78DE128154093A71029A00FB51835 }}
 
-
       # 3️⃣ Deploy to Azure Web App
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'whatsapp-webjs'        # اسم ال Web App
+          app-name: 'whatsapp-webjs'        # اسم Web App
           slot-name: 'Production'
-          package: nextjs-app/
-
+          package: ./nextjs-app-folder      # نفس مسار تنزيل artifact
