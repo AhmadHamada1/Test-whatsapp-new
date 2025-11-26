@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',        // ده أهم سطر لـ static export
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -8,7 +7,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,     // عشان الصور تشتغل بدون optimization server-side
+    unoptimized: true,
   },
 }
 
