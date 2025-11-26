@@ -57,12 +57,13 @@ jobs:
           name: nextjs-app
 
       # 2️⃣ Login to Azure
-      - name: Azure login
+      - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F20747F93EC74982B23B972006119A99 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F16C1D79A4DD44479C993F75F9F5BFB6 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6DF78DE128154093A71029A00FB51835 }}
+
 
       # 3️⃣ Deploy to Azure Web App
       - name: Deploy to Azure Web App
@@ -71,3 +72,4 @@ jobs:
           app-name: 'whatsapp-webjs'        # اسم ال Web App
           slot-name: 'Production'
           package: nextjs-app/
+
