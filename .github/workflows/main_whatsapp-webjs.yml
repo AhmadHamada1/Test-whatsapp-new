@@ -11,20 +11,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
 
+      # 3️⃣ Install dependencies & build SSR app
       - name: Install dependencies & build
         run: |
           cd web
           npm install --legacy-peer-deps
           npm run build
 
+      # 4️⃣ Upload artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -36,17 +40,25 @@ jobs:
     needs: build
 
     steps:
+      # 1️⃣ Download artifact
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: nextjs-app
-          path: ./web   # ← مهم: نزّل artifact في folder معروف
+          path: ./web
 
-      - name: Deploy to Azure Web App using Publish Profile
+      # 2️⃣ Deploy to Azure Web App using Publish Profile
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'whatsapp-webjs'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ./web/   # ← نفس folder اللي نزلت فيه artifact
+          package: ./web/
 
+      # 3️⃣ Install production dependencies & start app
+      - name: Install dependencies & start app
+        run: |
+          cd /home/site/wwwroot
+          npm install --production
+          npx next start
