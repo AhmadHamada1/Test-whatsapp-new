@@ -28,20 +28,20 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20' # Use your Node.js version
+          node-version: '20' # adjust if you use another Node.js version
 
-      # 3️⃣ Install dependencies
+      # 3️⃣ Install dependencies (ignore peer dependency conflicts)
       - name: Install dependencies
         run: |
           cd web
-          npm install
+          npm install --legacy-peer-deps
 
-      # 4️⃣ Build Next.js app
+      # 4️⃣ Build and export Next.js app
       - name: Build Next.js App
         run: |
           cd web
           npm run build
-          npm run export  # Exports static HTML into "out" folder
+          npm run export  # Exports static files to "out" folder
 
       # 5️⃣ Deploy to Azure Static Web Apps
       - name: Build And Deploy
