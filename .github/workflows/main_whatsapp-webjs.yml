@@ -11,24 +11,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
 
-      # 3️⃣ Install dependencies & build SSR app
-      - name: Install dependencies and build
+      - name: Install dependencies & build
         run: |
           cd web
           npm install --legacy-peer-deps
           npm run build
 
-      # 4️⃣ Upload artifact (code only, بدون node_modules)
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -40,31 +36,15 @@ jobs:
     needs: build
 
     steps:
-      # 1️⃣ Download artifact
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: nextjs-app
 
-      # 2️⃣ Login to Azure
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F20747F93EC74982B23B972006119A99 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F16C1D79A4DD44479C993F75F9F5BFB6 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6DF78DE128154093A71029A00FB51835 }}
-
-      # 3️⃣ Deploy to Azure Web App
-      - name: Deploy to Azure Web App
+      - name: Deploy to Azure Web App using Publish Profile
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'whatsapp-webjs'   # غيّر الاسم لو App مختلف
+          app-name: 'whatsapp-webjs'
           slot-name: 'Production'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: nextjs-app/
-
-      # 4️⃣ Install dependencies & start app on Azure
-      - name: Install dependencies & start app
-        run: |
-          cd /home/site/wwwroot
-          npm install --production
-          npm run start
