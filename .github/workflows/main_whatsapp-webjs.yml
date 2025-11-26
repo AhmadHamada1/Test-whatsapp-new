@@ -40,6 +40,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: nextjs-app
+          path: ./web   # ← مهم: نزّل artifact في folder معروف
 
       - name: Deploy to Azure Web App using Publish Profile
         uses: azure/webapps-deploy@v3
@@ -47,4 +48,6 @@ jobs:
           app-name: 'whatsapp-webjs'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: nextjs-app/
+
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./web/   # ← نفس folder اللي نزلت فيه artifact
